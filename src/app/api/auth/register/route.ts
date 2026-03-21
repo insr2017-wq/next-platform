@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { generateInviteCode } from "@/lib/invite-code";
@@ -8,22 +9,33 @@ import {
   ensureUserCheckInColumnsSqlite,
 } from "@/lib/user-schema-sqlite";
 import { generateUniquePublicId } from "@/lib/public-id";
+import { logPrismaOrServerError } from "@/lib/prisma-error-log";
+import { authRouteLog, summarizeRegisterBody } from "@/lib/auth-route-log";
+
+const ROUTE = "api/auth/register";
 
 function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, "").trim();
 }
 
 export async function POST(request: Request) {
+  authRouteLog(ROUTE, "POST iniciado");
+
   let body: unknown;
   try {
     body = await request.json();
   } catch {
+    authRouteLog(ROUTE, "JSON inválido");
     return NextResponse.json(
       { error: "Corpo da requisição inválido." },
       { status: 400 }
     );
   }
+
+  authRouteLog(ROUTE, "payload (sem senha)", summarizeRegisterBody(body));
+
   try {
+    authRouteLog(ROUTE, "antes: ensureUser* (no-op em Postgres)");
     await ensureUserBannedColumnSqlite();
     await ensureUserPublicIdColumnAndBackfill();
     await ensureUserCheckInColumnsSqlite();
@@ -43,7 +55,10 @@ export async function POST(request: Request) {
     };
 
     const phone = normalizePhone(rawPhone ?? "");
+    authRouteLog(ROUTE, "telefone normalizado", { digitsLen: phone.length });
+
     if (!phone || phone.length < 10) {
+      authRouteLog(ROUTE, "validação falhou: telefone");
       return NextResponse.json(
         { error: "Número de telefone inválido." },
         { status: 400 }
@@ -51,6 +66,7 @@ export async function POST(request: Request) {
     }
 
     if (!password || typeof password !== "string" || password.length < 6) {
+      authRouteLog(ROUTE, "validação falhou: senha");
       return NextResponse.json(
         { error: "Senha deve ter no mínimo 6 caracteres." },
         { status: 400 }
@@ -58,48 +74,36 @@ export async function POST(request: Request) {
     }
 
     if (password !== confirmPassword) {
+      authRouteLog(ROUTE, "validação falhou: senhas diferentes");
       return NextResponse.json(
         { error: "As senhas não coincidem." },
         { status: 400 }
       );
     }
 
+    const referredByRaw =
+      typeof rawInviteCode === "string" && rawInviteCode.trim()
+        ? rawInviteCode.trim()
+        : null;
+
+    authRouteLog(ROUTE, "findUnique User por phone (duplicata)");
     const existing = await prisma.user.findUnique({ where: { phone } });
     if (existing) {
+      authRouteLog(ROUTE, "telefone já cadastrado");
       return NextResponse.json(
         { error: "Este número de telefone já está cadastrado." },
         { status: 409 }
       );
     }
 
-    let inviteCode: string;
-    let attempts = 0;
-    do {
-      inviteCode = generateInviteCode();
-      const taken = await prisma.user.findUnique({ where: { inviteCode } });
-      if (!taken) break;
-      attempts++;
-      if (attempts > 10) {
-        return NextResponse.json(
-          { error: "Erro ao gerar código. Tente novamente." },
-          { status: 500 }
-        );
-      }
-    } while (true);
-
-    const referredByRaw =
-      typeof rawInviteCode === "string" && rawInviteCode.trim()
-        ? rawInviteCode.trim()
-        : null;
-
-    // Se o código de convite foi informado, ele precisa existir.
-    // O convite é opcional: se vier vazio/nulo, o cadastro segue normal.
     if (referredByRaw) {
+      authRouteLog(ROUTE, "findUnique convite (validação)");
       const inviter = await prisma.user.findUnique({
         where: { inviteCode: referredByRaw },
         select: { id: true },
       });
       if (!inviter) {
+        authRouteLog(ROUTE, "convite inválido");
         return NextResponse.json(
           { error: "Código de convite inválido." },
           { status: 400 }
@@ -107,36 +111,82 @@ export async function POST(request: Request) {
       }
     }
 
+    authRouteLog(ROUTE, "hashPassword (uma vez)");
     const passwordHash = await hashPassword(password);
-    const publicId = await generateUniquePublicId();
 
-    await prisma.$transaction(async (tx) => {
-      const newUser = await tx.user.create({
-        data: {
-          fullName: typeof fullName === "string" ? fullName.trim() : "",
-          phone,
-          passwordHash,
-          inviteCode,
-          referredBy: referredByRaw,
-          publicId,
-          balance: 25,
-        },
-      });
-      if (referredByRaw) {
-        const inviter = await tx.user.findFirst({
-          where: { inviteCode: referredByRaw },
-        });
-        if (inviter && inviter.id !== newUser.id) {
-          await tx.referral.create({
-            data: { inviterId: inviter.id, invitedUserId: newUser.id },
+    const maxAttempts = 3;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        let inviteCode: string;
+        let genAttempts = 0;
+        do {
+          inviteCode = generateInviteCode();
+          authRouteLog(ROUTE, "findUnique inviteCode livre", { genAttempts });
+          const taken = await prisma.user.findUnique({ where: { inviteCode } });
+          if (!taken) break;
+          genAttempts++;
+          if (genAttempts > 10) {
+            authRouteLog(ROUTE, "falha: muitas tentativas inviteCode");
+            return NextResponse.json(
+              { error: "Erro ao gerar código. Tente novamente." },
+              { status: 500 }
+            );
+          }
+        } while (true);
+
+        authRouteLog(ROUTE, "generateUniquePublicId", { attempt });
+        const publicId = await generateUniquePublicId();
+
+        authRouteLog(ROUTE, "início $transaction create User", { attempt });
+        await prisma.$transaction(async (tx) => {
+          const newUser = await tx.user.create({
+            data: {
+              fullName: typeof fullName === "string" ? fullName.trim() : "",
+              phone,
+              passwordHash,
+              inviteCode,
+              referredBy: referredByRaw,
+              publicId,
+              balance: 25,
+            },
           });
+          if (referredByRaw) {
+            const inviter = await tx.user.findFirst({
+              where: { inviteCode: referredByRaw },
+            });
+            if (inviter && inviter.id !== newUser.id) {
+              await tx.referral.create({
+                data: { inviterId: inviter.id, invitedUserId: newUser.id },
+              });
+            }
+          }
+        });
+        authRouteLog(ROUTE, "cadastro concluído com sucesso");
+        return NextResponse.json({ success: true });
+      } catch (e) {
+        if (
+          e instanceof Prisma.PrismaClientKnownRequestError &&
+          e.code === "P2002" &&
+          attempt < maxAttempts - 1
+        ) {
+          authRouteLog(ROUTE, "P2002 unicidade — retry", {
+            attempt: attempt + 1,
+            prismaCode: e.code,
+            meta: JSON.stringify(e.meta ?? {}),
+          });
+          continue;
         }
+        throw e;
       }
-    });
+    }
 
-    return NextResponse.json({ success: true });
+    authRouteLog(ROUTE, "esgotaram tentativas após P2002");
+    return NextResponse.json(
+      { error: "Não foi possível concluir o cadastro. Tente novamente." },
+      { status: 500 }
+    );
   } catch (e) {
-    console.error("Register error:", e);
+    logPrismaOrServerError(ROUTE, e);
     const message =
       process.env.NODE_ENV === "development" && e instanceof Error
         ? e.message

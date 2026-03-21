@@ -127,6 +127,8 @@ The app and `prisma.config.ts` load `.env` automatically.
 
 ### 3) Database
 
+**Produção (Supabase / Vercel):** após definir `DATABASE_URL`, aplique as migrações no banco real — veja `docs/PRODUCTION-DATABASE.md`.
+
 ```bash
 # Generate Prisma client (required before build; PostgreSQL via DATABASE_URL)
 npm run db:generate
