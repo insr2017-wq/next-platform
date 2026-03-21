@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/lib/prisma-generated";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { generateInviteCode } from "@/lib/invite-code";

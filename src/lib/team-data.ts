@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@/lib/prisma-generated";
 import { maskPhone } from "@/lib/format";
 
 export type TeamMember = {

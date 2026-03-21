@@ -1,6 +1,5 @@
 import { PrismaPg } from "@prisma/adapter-pg";
-/* Cliente deve vir do output customizado do schema (generated/prisma), não de @prisma/client no node_modules. */
-import { PrismaClient } from "../../generated/prisma/client";
+import { PrismaClient } from "@/lib/prisma-generated";
 import { normalizePostgresUrlForPrisma } from "@/lib/database-url";
 
 const globalForPrisma = globalThis as unknown as {

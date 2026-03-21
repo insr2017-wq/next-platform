@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/lib/prisma-generated";
 
 /**
  * Registra erros de Prisma nos logs do servidor (inclui produção / Vercel).
