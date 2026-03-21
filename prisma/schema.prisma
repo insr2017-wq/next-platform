@@ -1,0 +1,208 @@
+// Backend foundation: User model for auth and roles
+// SQLite for development; switch datasource to postgresql for production if needed
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String     @id @default(cuid())
+  /// ID público (para exibição / suporte). Formato: ID1234
+  publicId     String?    @unique
+  fullName     String     @default("")
+  phone        String     @unique
+  passwordHash String
+  role         String     @default("user") // "user" | "admin"
+  /// Suspensa: não pode fazer login
+  banned       Boolean    @default(false)
+  /// Saldo inicial para novos usuários (validação de saques: depósito confirmado ou patrocinado)
+  balance      Float      @default(25)
+  /// Usuário liberado pela administração para realizar saques sem depósito
+  sponsoredUser Boolean   @default(false)
+  /// Tipo da chave Pix do usuário (ex.: cpf, phone). Para saques/recebimentos.
+  pixKeyType   String?
+  /// Chave Pix (CPF, telefone, e-mail, etc.)
+  pixKey       String?
+  /// Nome do titular (para preencher saques e armazenar dados do Pix)
+  holderName   String?
+  /// CPF do titular (apenas dígitos) para saques
+  holderCpf    String?
+  inviteCode   String     @unique
+  referredBy   String?    // invite code of referrer
+  /// Último check-in: data no calendário America/Sao_Paulo (YYYY-MM-DD)
+  checkInLastDate String?
+  /// Último dia do ciclo de 7 resgatado nesse check-in (1–7); 0 = nunca resgatou
+  checkInLastSlot Int      @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deposits     Deposit[]
+  withdrawals  Withdrawal[]
+  referralsAsInviter   Referral[] @relation("Inviter")
+  referralsAsInvited   Referral[] @relation("Invited")
+  bonusRedemptions     BonusCodeRedemption[]
+  userProducts         UserProduct[]
+  referralCommissionsReceived ReferralCommission[] @relation("ReferralCommissionRecipient")
+  referralCommissionsSource   ReferralCommission[] @relation("ReferralCommissionSource")
+}
+
+model Deposit {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Float
+  status    String   // "pending" | "paid" | "failed"
+  /// ID retornado pelo gateway (quando existir).
+  gatewayTransactionId String?
+  /// Identificador do provedor/gateway (ex.: "mercadopago", "stripe", etc.).
+  gatewayProvider      String?
+  /// Código PIX (quando aplicável).
+  pixCode              String?
+  /// Imagem/URL base64 do QR Code (quando aplicável).
+  qrCodeImage          String?
+  /// Referência externa para conciliar webhooks.
+  externalReference    String?
+  /// Data/hora em que o gateway confirmou o pagamento.
+  paidAt               DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Withdrawal {
+  id          String   @id @default(cuid())
+  userId      String
+  /// Valor líquido a receber (net). Para compatibilidade, este campo pode conter o valor anteriormente deduzido.
+  amount      Float   @default(0)
+  /// Valor solicitado/gross antes da taxa.
+  requestedAmount Float @default(0)
+  /// Percentual da taxa aplicada.
+  feePercent  Float   @default(0)
+  /// Valor da taxa em reais.
+  feeAmount   Float   @default(0)
+  /// Valor líquido efetivamente pago ao usuário.
+  netAmount   Float   @default(0)
+  pixKeyType  String
+  pixKey      String
+  holderName  String
+  holderCpf   String
+  status      String   // "pending" | "processed" | "failed"
+  /// ID retornado pelo gateway (quando existir).
+  gatewayTransactionId String?
+  /// Identificador do provedor/gateway (quando existir).
+  gatewayProvider      String?
+  /// Referência externa para conciliar webhooks.
+  externalReference    String?
+  /// Data/hora em que a solicitação foi finalizada (aprovada ou recusada).
+  processedAt          DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model BonusCode {
+  id             String                @id @default(cuid())
+  code           String                @unique
+  minAmount      Float                 // valor mínimo do sorteio (ex.: 0.01)
+  maxAmount      Float                 // valor máximo do sorteio (ex.: 1.00)
+  maxRedemptions Int                   // 0 = ilimitado; senão teto de resgates
+  isActive       Boolean               @default(true)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  redemptions    BonusCodeRedemption[]
+}
+
+// Registro de cada resgate (valor aleatório gerado na hora)
+model BonusCodeRedemption {
+  id          String    @id @default(cuid())
+  bonusCodeId String
+  userId      String
+  amount      Float     // valor creditado neste resgate
+  createdAt   DateTime  @default(now())
+  bonusCode   BonusCode @relation(fields: [bonusCodeId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([bonusCodeId, userId])
+}
+
+model Referral {
+  id             String   @id @default(cuid())
+  inviterId      String
+  invitedUserId String
+  createdAt      DateTime @default(now())
+  inviter        User     @relation("Inviter", fields: [inviterId], references: [id], onDelete: Cascade)
+  invitedUser    User     @relation("Invited", fields: [invitedUserId], references: [id], onDelete: Cascade)
+}
+
+model Product {
+  id           String        @id @default(cuid())
+  name         String
+  imageUrl     String        @default("")
+  price        Float
+  dailyYield   Float         // rendimento diário (R$)
+  cycleDays    Int           // ciclo em dias
+  totalReturn  Float         // retorno total (R$)
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  purchases    UserProduct[]
+}
+
+model UserProduct {
+  id                  String    @id @default(cuid())
+  userId              String
+  productId           String
+  purchasedAt         DateTime  @default(now())
+  // Snapshot na compra (rendimento/ciclo não mudam se o admin editar o produto)
+  dailyYieldSnapshot  Float     @default(0)
+  cycleDaysSnapshot   Int       @default(0)
+  daysPaid            Int       @default(0)
+  lastPayoutAt        DateTime? // fim do último período de 24h já creditado
+  earningStatus       String    @default("active") // "active" | "completed"
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product             Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  referralCommissions ReferralCommission[]
+}
+
+// Configuração global da plataforma (uma única linha, id = "global")
+model PlatformSettings {
+  id               String   @id
+  minDeposit       Float    @default(10)
+  minWithdrawal    Float    @default(20)
+  commissionLevel1 Float    @default(10) // % nível 1 (direto)
+  commissionLevel2 Float    @default(5)  // % nível 2
+  commissionLevel3 Float    @default(2)  // % nível 3
+  /// Taxa de saque (% sobre o valor solicitado/gross).
+  withdrawalFeePercent Float @default(0)
+  /// Modal de boas-vindas exibido na página inicial do usuário.
+  welcomeModalEnabled Boolean @default(false)
+  welcomeModalTitle   String  @default("Boas-vindas")
+  welcomeModalText    String  @default("")
+  /// Link do grupo (WhatsApp/Telegram etc.) usado no botão do modal.
+  welcomeModalLink   String  @default("")
+  /// Render de rendimentos para validação manual (apenas testes).
+  earningsTestMode Boolean @default(false)
+  /// Intervalo em minutos quando `earningsTestMode = true`.
+  earningsTestIntervalMinutes Int @default(10)
+  updatedAt        DateTime @updatedAt
+}
+
+// Registro de comissões de indicação geradas apenas após compra de produto
+model ReferralCommission {
+  id             String   @id @default(cuid())
+  userId         String // usuário que recebeu a comissão (nível 1/2/3)
+  sourceUserId   String // usuário que comprou o produto
+  userProductId  String // compra que originou a comissão
+  level          Int // 1, 2 ou 3
+  amount         Float
+  createdAt      DateTime @default(now())
+
+  user        User      @relation("ReferralCommissionRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  sourceUser User      @relation("ReferralCommissionSource", fields: [sourceUserId], references: [id], onDelete: Cascade)
+  userProduct UserProduct @relation(fields: [userProductId], references: [id], onDelete: Cascade)
+
+  @@unique([userProductId, level])
+}
