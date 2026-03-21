@@ -251,8 +251,8 @@ export default async function AdminUsersPage({
             </>
           ) : (
             <>
-              Ocorreu um erro ao consultar o banco. Se o problema continuar, confira a conexão com o
-              SQLite e execute <code>npx prisma db push</code> para alinhar o schema.
+              Ocorreu um erro ao consultar o banco. Se o problema continuar, confira{" "}
+              <code>DATABASE_URL</code> (PostgreSQL) e as migrações.
             </>
           )}
         </p>

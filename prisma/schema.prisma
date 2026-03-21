@@ -1,5 +1,5 @@
 // Backend foundation: User model for auth and roles
-// SQLite for development; switch datasource to postgresql for production if needed
+// Produção (Vercel) e desenvolvimento local usam PostgreSQL via DATABASE_URL.
 
 generator client {
   provider = "prisma-client"
@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model User {

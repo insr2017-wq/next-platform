@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
 import { BottomNav } from "@/components/nav/BottomNav";
+
+/** Evita pré-render estático que acessa o banco durante `next build` / runtime edge. */
+export const dynamic = "force-dynamic";
 import { BannedUserGuard } from "./BannedUserGuard";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";

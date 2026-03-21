@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/db";
 
 function isSqliteFileDb(): boolean {
-  const url = process.env.DATABASE_URL ?? "file:./prisma/dev.db";
-  return url.trim().toLowerCase().startsWith("file:");
+  const url = process.env.DATABASE_URL?.trim() ?? "";
+  if (!url) return false;
+  return url.toLowerCase().startsWith("file:");
 }
 
 async function ensureUserColumnSqlite(

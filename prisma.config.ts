@@ -3,6 +3,17 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+const dbUrl = process.env["DATABASE_URL"]?.trim() ?? "";
+
+/** Build/deploy na Vercel: só PostgreSQL via DATABASE_URL — nunca file: / SQLite. */
+if (process.env.VERCEL) {
+  if (!dbUrl || dbUrl.startsWith("file:")) {
+    throw new Error(
+      "DATABASE_URL na Vercel deve ser uma connection string PostgreSQL. Não use file: nem SQLite."
+    );
+  }
+}
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
@@ -10,6 +21,6 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url: process.env["DATABASE_URL"] ?? "file:./prisma/dev.db",
+    url: dbUrl,
   },
 });

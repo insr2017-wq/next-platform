@@ -9,7 +9,7 @@ This document describes the backend layer added to the platform: database, authe
 ### Technology
 
 - **ORM:** Prisma
-- **Database:** SQLite for development (file: `prisma/dev.db`). You can switch the datasource in `prisma/schema.prisma` to `postgresql` and set `DATABASE_URL` for production.
+- **Database:** **PostgreSQL** via `DATABASE_URL` (Supabase, Neon, RDS, Docker, etc.). O app usa `@prisma/adapter-pg`; não há fallback para SQLite em produção.
 
 ### User model (`prisma/schema.prisma`)
 
@@ -83,7 +83,7 @@ This document describes the backend layer added to the platform: database, authe
 
 | Path | Purpose |
 |------|--------|
-| `prisma/schema.prisma` | User model and SQLite datasource |
+| `prisma/schema.prisma` | Models e datasource PostgreSQL |
 | `prisma/seed.ts` | Creates default admin user for development |
 | `src/lib/db.ts` | Prisma client singleton |
 | `src/lib/auth.ts` | Password hash/verify, JWT create/verify, session cookie get/set/delete |
@@ -113,14 +113,14 @@ This document describes the backend layer added to the platform: database, authe
 
 Copy `.env.example` to `.env` and adjust:
 
-- **DATABASE_URL** – For SQLite: `file:./prisma/dev.db` (or `file:./dev.db` so the file is created in `prisma/`).
+- **DATABASE_URL** – Connection string PostgreSQL (obrigatório). Ex.: Supabase (Settings → Database).
 - **JWT_SECRET** – Any long, random string; required in production.
 
 ### 2) Environment variables
 
 Create a `.env` at the project root (or copy from `.env.example`):
 
-- **DATABASE_URL** – For SQLite: `file:./prisma/dev.db`. (Used by Prisma CLI and by the app at runtime.)
+- **DATABASE_URL** – PostgreSQL; usado pelo Prisma CLI e pelo app em runtime.
 - **JWT_SECRET** – Any long random string; required in production for session signing.
 
 The app and `prisma.config.ts` load `.env` automatically.
@@ -128,10 +128,10 @@ The app and `prisma.config.ts` load `.env` automatically.
 ### 3) Database
 
 ```bash
-# Generate Prisma client (required before build; uses SQLite adapter)
+# Generate Prisma client (required before build; PostgreSQL via DATABASE_URL)
 npm run db:generate
 
-# Create DB and run migrations (creates prisma/dev.db and User table)
+# Create DB and run migrations no Postgres configurado em DATABASE_URL
 npm run db:migrate
 
 # Seed default admin user (optional)
@@ -201,7 +201,7 @@ To add logout for the current user:
 
 ## Summary
 
-- **Database:** Prisma + SQLite, single `User` table with role and invite fields.
+- **Database:** Prisma + PostgreSQL (`DATABASE_URL`), modelos em `prisma/schema.prisma`.
 - **Auth:** Login/register APIs, JWT in HTTP-only cookie, bcrypt for passwords.
 - **Roles:** `user` → `/home`; `admin` → `/admin/dashboard`; middleware enforces access.
 - **Frontend:** Login and register pages are wired to the new APIs; layout and design are unchanged.
