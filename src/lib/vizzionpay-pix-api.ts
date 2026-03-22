@@ -13,12 +13,13 @@ export type VizzionPayPixClient = {
 };
 
 export type VizzionPayPixProduct = {
-  /** Identificador do item (obrigatório na API VizzionPay). */
+  /** ID do produto no catálogo VizzionPay (painel), ativo e à venda — não é o ID do depósito local. */
   id: string;
   name: string;
   description?: string;
   quantity: number;
-  price: number;
+  /** Omitido quando o gateway deve usar só o preço do catálogo / `amount` raiz. */
+  price?: number;
 };
 
 export type VizzionPayPixReceiveRequest = {

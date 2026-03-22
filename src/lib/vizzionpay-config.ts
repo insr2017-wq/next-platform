@@ -30,3 +30,30 @@ export function getVizzionPayConfig(): VizzionPayConfig | null {
   if (!publicKey || !secretKey) return null;
   return { publicKey, secretKey };
 }
+
+/**
+ * ID do produto criado no painel VizzionPay para recarga de saldo (ativo / à venda).
+ * O gateway rejeita IDs que não existam no catálogo do estabelecimento.
+ */
+export function getVizzionPayDepositProductId(): string | null {
+  const id = process.env.VIZZIONPAY_DEPOSIT_PRODUCT_ID?.trim();
+  return id || null;
+}
+
+/**
+ * Preço unitário (R$) do produto no painel VizzionPay, quando o item é vendido por unidade fixa.
+ * Se definido, o payload envia quantity = amount/unit (inteiro) e price = unit, para bater com o catálogo.
+ */
+export function getVizzionPayDepositProductUnitPrice(): number | null {
+  const raw = process.env.VIZZIONPAY_DEPOSIT_PRODUCT_UNIT_PRICE?.trim();
+  if (!raw) return null;
+  const n = parseFloat(raw.replace(",", "."));
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.round(n * 100) / 100;
+}
+
+/** Se true, não envia `price` na linha do produto (só id, nome, descrição, quantidade); o total fica no `amount` da raiz. */
+export function shouldOmitVizzionPayDepositProductPrice(): boolean {
+  const v = process.env.VIZZIONPAY_DEPOSIT_PRODUCT_OMIT_PRICE?.trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes";
+}

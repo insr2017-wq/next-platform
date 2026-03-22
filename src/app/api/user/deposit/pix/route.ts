@@ -62,6 +62,15 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+    if (msg === "DEPOSIT_AMOUNT_INCOMPATIBLE_WITH_PRODUCT_UNIT") {
+      return NextResponse.json(
+        {
+          error:
+            "O valor da recarga não combina com o preço unitário do produto configurado no pagamento. Ajuste o valor ou a configuração.",
+        },
+        { status: 400 }
+      );
+    }
     if (msg === "USER_NOT_FOUND") {
       return NextResponse.json({ error: "Conta inválida." }, { status: 403 });
     }
@@ -69,6 +78,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Conta suspensa." }, { status: 403 });
     }
     if (msg === "VIZZIONPAY_NOT_CONFIGURED") {
+      return NextResponse.json(
+        {
+          error: "Pix indisponível no momento. Tente novamente mais tarde.",
+          detail: devErrorDetail(e),
+        },
+        { status: 503 }
+      );
+    }
+    if (msg === "VIZZIONPAY_DEPOSIT_PRODUCT_NOT_CONFIGURED") {
       return NextResponse.json(
         {
           error: "Pix indisponível no momento. Tente novamente mais tarde.",

@@ -1,12 +1,18 @@
 import { prisma } from "@/lib/db";
 import { getPlatformSettings } from "@/lib/platform-settings";
 import { getAppBaseUrl } from "@/lib/app-base-url";
-import { getVizzionPayConfig } from "@/lib/vizzionpay-config";
+import {
+  getVizzionPayConfig,
+  getVizzionPayDepositProductId,
+  getVizzionPayDepositProductUnitPrice,
+  shouldOmitVizzionPayDepositProductPrice,
+} from "@/lib/vizzionpay-config";
 import {
   explainVizzionPayParseFailure,
   parseVizzionPayPixReceiveResponse,
   postVizzionPayPixReceive,
   VizzionPayPixApiError,
+  type VizzionPayPixProduct,
   type VizzionPayPixReceiveRequest,
 } from "@/lib/vizzionpay-pix-api";
 import {
@@ -92,6 +98,59 @@ function resolveClientDocumentWithSource(user: {
   return { document: "00000000000", source: "placeholder" };
 }
 
+type DepositProductLineMode = "omit_price" | "unit_from_env" | "single_qty_price_equals_amount";
+
+/**
+ * Monta a linha de produto conforme o catálogo VizzionPay:
+ * - omit_price: não envia `price` (alguns fluxos usam só `amount` + id do produto).
+ * - unit_from_env: preço unitário fixo no painel → quantidade = amount / unit (inteiro).
+ * - single_qty_price_equals_amount: uma unidade com price = valor da recarga (produto com valor aberto no painel).
+ */
+function buildPixDepositProductLine(
+  catalogProductId: string,
+  amount: number,
+  unitPriceFromEnv: number | null,
+  omitPrice: boolean
+): { line: VizzionPayPixProduct; mode: DepositProductLineMode } {
+  const name = "Recarga de saldo";
+  const description = "Recarga via Pix na plataforma";
+
+  if (omitPrice) {
+    return {
+      line: { id: catalogProductId, name, description, quantity: 1 },
+      mode: "omit_price",
+    };
+  }
+
+  if (unitPriceFromEnv != null && unitPriceFromEnv > 0) {
+    const unit = round2(unitPriceFromEnv);
+    const rawQty = amount / unit;
+    const qty = Math.round(rawQty);
+    if (qty < 1 || !Number.isFinite(qty)) {
+      throw new Error("DEPOSIT_AMOUNT_INCOMPATIBLE_WITH_PRODUCT_UNIT");
+    }
+    const total = round2(unit * qty);
+    if (Math.abs(total - amount) > 0.01) {
+      throw new Error("DEPOSIT_AMOUNT_INCOMPATIBLE_WITH_PRODUCT_UNIT");
+    }
+    return {
+      line: { id: catalogProductId, name, description, quantity: qty, price: unit },
+      mode: "unit_from_env",
+    };
+  }
+
+  return {
+    line: {
+      id: catalogProductId,
+      name,
+      description,
+      quantity: 1,
+      price: amount,
+    },
+    mode: "single_qty_price_equals_amount",
+  };
+}
+
 export type CreateVizzionPayDepositResult = {
   depositId: string;
   identifier: string;
@@ -113,6 +172,12 @@ export async function createVizzionPayPixDeposit(
   if (!getVizzionPayConfig()) {
     throw new Error("VIZZIONPAY_NOT_CONFIGURED");
   }
+  const catalogProductId = getVizzionPayDepositProductId();
+  if (!catalogProductId) {
+    throw new Error("VIZZIONPAY_DEPOSIT_PRODUCT_NOT_CONFIGURED");
+  }
+  const omitProductPrice = shouldOmitVizzionPayDepositProductPrice();
+  const catalogUnitPrice = getVizzionPayDepositProductUnitPrice();
 
   const settings = await getPlatformSettings();
   const amount = round2(Number(amountInput));
@@ -174,6 +239,13 @@ export async function createVizzionPayPixDeposit(
     });
   }
 
+  const { line: productLine, mode: depositProductLineMode } = buildPixDepositProductLine(
+    catalogProductId,
+    amount,
+    catalogUnitPrice,
+    omitProductPrice
+  );
+
   const payload: VizzionPayPixReceiveRequest = {
     identifier,
     amount,
@@ -183,15 +255,7 @@ export async function createVizzionPayPixDeposit(
       phone: clientPhone,
       document: docInfo.document,
     },
-    products: [
-      {
-        id: identifier,
-        name: "Recarga de saldo",
-        description: "Recarga via Pix na plataforma",
-        quantity: 1,
-        price: amount,
-      },
-    ],
+    products: [productLine],
     metadata: {
       userId: user.id,
       depositId: deposit.id,
@@ -214,6 +278,7 @@ export async function createVizzionPayPixDeposit(
   logVizzionPayPixEvent("vizzionpay_request_payload", {
     identifier,
     amount,
+    depositProductLineMode,
     callbackUrl,
     appBaseUrlResolved: baseUrl,
     client: clientLog,
@@ -315,7 +380,9 @@ export async function createVizzionPayPixDeposit(
       msg === "MIN_DEPOSIT_NOT_MET" ||
       msg === "USER_NOT_FOUND" ||
       msg === "USER_BANNED" ||
-      msg === "VIZZIONPAY_NOT_CONFIGURED"
+      msg === "VIZZIONPAY_NOT_CONFIGURED" ||
+      msg === "VIZZIONPAY_DEPOSIT_PRODUCT_NOT_CONFIGURED" ||
+      msg === "DEPOSIT_AMOUNT_INCOMPATIBLE_WITH_PRODUCT_UNIT"
     ) {
       throw e;
     }
