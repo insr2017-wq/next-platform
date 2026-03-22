@@ -197,6 +197,9 @@ export async function postVizzionPayPixReceive(
   const text = await res.text();
   logVizzionPayPixEvent("http_response_raw", {
     identifier: body.identifier,
+    requestUrl: url,
+    responseUrl: res.url,
+    redirected: res.redirected,
     statusCode: res.status,
     bodyLength: text.length,
     bodyPreview: truncateForLog(text, 8_000),
