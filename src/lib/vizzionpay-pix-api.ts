@@ -165,6 +165,11 @@ export async function postVizzionPayPixReceive(
   }
 
   const url = getVizzionPayReceiveUrl();
+  logVizzionPayPixEvent("http_request_final_url", {
+    finalUrl: url,
+    method: "POST",
+    identifier: body.identifier,
+  });
 
   let res: Response;
   try {
