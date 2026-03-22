@@ -185,6 +185,7 @@ export async function createVizzionPayPixDeposit(
     },
     products: [
       {
+        id: identifier,
         name: "Recarga de saldo",
         description: "Recarga via Pix na plataforma",
         quantity: 1,
@@ -218,6 +219,7 @@ export async function createVizzionPayPixDeposit(
     client: clientLog,
     metadata: payload.metadata,
     products: payload.products.map((p) => ({
+      id: p.id,
       name: p.name,
       quantity: p.quantity,
       price: p.price,

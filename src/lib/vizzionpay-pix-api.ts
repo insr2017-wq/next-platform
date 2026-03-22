@@ -13,6 +13,8 @@ export type VizzionPayPixClient = {
 };
 
 export type VizzionPayPixProduct = {
+  /** Identificador do item (obrigatório na API VizzionPay). */
+  id: string;
   name: string;
   description?: string;
   quantity: number;
