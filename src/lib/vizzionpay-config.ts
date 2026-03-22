@@ -3,7 +3,7 @@ export type VizzionPayConfig = {
   secretKey: string;
 };
 
-const RECEIVE_URL = "https://app.vizzionpay.com/api/v1/gateway/pix/receive";
+const RECEIVE_URL = "https://app.vizzionpay.com.br/api/v1/gateway/pix/receive";
 
 export function getVizzionPayReceiveUrl(): string {
   return RECEIVE_URL;
