@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { createVizzionPayPixDeposit } from "@/lib/deposit-vizzionpay";
 import { devErrorDetail, logDevApiError } from "@/lib/dev-api-error";
+import { logVizzionPayPixError } from "@/lib/vizzionpay-pix-log";
 
 function parseAmount(v: unknown): number | null {
   if (typeof v === "number" && Number.isFinite(v) && v > 0) return v;
@@ -47,6 +48,10 @@ export async function POST(request: Request) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : "";
     logDevApiError("user/deposit/pix", e);
+    logVizzionPayPixError("api_user_deposit_pix_route", {
+      errorCode: msg || "unknown",
+      name: e instanceof Error ? e.name : typeof e,
+    });
 
     if (msg === "AMOUNT_INVALID") {
       return NextResponse.json({ error: "Informe um valor válido para a recarga." }, { status: 400 });

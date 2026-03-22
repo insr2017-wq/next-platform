@@ -1,4 +1,9 @@
 import { getVizzionPayConfig, getVizzionPayReceiveUrl } from "@/lib/vizzionpay-config";
+import {
+  logVizzionPayPixError,
+  logVizzionPayPixEvent,
+  truncateForLog,
+} from "@/lib/vizzionpay-pix-log";
 
 export type VizzionPayPixClient = {
   name: string;
@@ -100,6 +105,45 @@ export function parseVizzionPayPixReceiveResponse(json: unknown): VizzionPayPixR
   };
 }
 
+/**
+ * Motivo legível quando {@link parseVizzionPayPixReceiveResponse} retorna null
+ * (para diagnóstico em log; não expor ao cliente).
+ */
+export function explainVizzionPayParseFailure(json: unknown): string {
+  if (!isRecord(json)) {
+    return "Resposta não é um objeto JSON (raiz inválida).";
+  }
+  if (json.success === false) {
+    const msg =
+      pickString(json, ["message", "error", "errorMessage", "msg", "description"]) ??
+      "(sem mensagem)";
+    const code = pickString(json, ["code", "errorCode"]);
+    return `success=false na raiz${code ? ` [code=${code}]` : ""}: ${msg}`;
+  }
+  const data = isRecord(json.data) ? json.data : json;
+  if (isRecord(data) && data.success === false) {
+    const msg =
+      pickString(data, ["message", "error", "errorMessage", "msg", "description"]) ??
+      "(sem mensagem)";
+    const code = pickString(data, ["code", "errorCode"]);
+    return `success=false em data${code ? ` [code=${code}]` : ""}: ${msg}`;
+  }
+  const pix =
+    (isRecord(data) && isRecord(data.pix) ? data.pix : null) ??
+    (isRecord(json.pix) ? json.pix : null) ??
+    (isRecord(data) && isRecord(data.payment) && isRecord(data.payment.pix)
+      ? data.payment.pix
+      : null);
+  const pixCode =
+    pickString(pix, ["code", "copyPaste", "copy_paste", "emv", "payload"]) ??
+    pickString(isRecord(data) ? data : {}, ["pixCode", "pix_code", "copyPaste", "emv"]) ??
+    pickString(json, ["pixCode", "pix_code"]);
+  if (!pixCode) {
+    return "Código Pix (copy-and-paste / emv / pixCode) ausente ou vazio após inspecionar raiz, data e data.payment.pix.";
+  }
+  return "Resposta reconhece código Pix mas o parser não montou o objeto (caso inesperado).";
+}
+
 export class VizzionPayPixApiError extends Error {
   readonly statusCode: number;
   readonly bodySnippet: string;
@@ -121,18 +165,38 @@ export async function postVizzionPayPixReceive(
   }
 
   const url = getVizzionPayReceiveUrl();
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-public-key": cfg.publicKey,
-      "x-secret-key": cfg.secretKey,
-    },
-    body: JSON.stringify(body),
-    cache: "no-store",
-  });
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-public-key": cfg.publicKey,
+        "x-secret-key": cfg.secretKey,
+      },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+  } catch (err) {
+    const name = err instanceof Error ? err.name : "Error";
+    const message = err instanceof Error ? err.message : String(err);
+    logVizzionPayPixError("http_fetch_threw", {
+      identifier: body.identifier,
+      errorName: name,
+      errorMessage: message,
+    });
+    throw new VizzionPayPixApiError(`FETCH_FAILED: ${message}`, 0, message);
+  }
 
   const text = await res.text();
+  logVizzionPayPixEvent("http_response_raw", {
+    identifier: body.identifier,
+    statusCode: res.status,
+    bodyLength: text.length,
+    bodyPreview: truncateForLog(text, 8_000),
+  });
+
   if (!res.ok) {
     return { ok: false, status: res.status, text: text.slice(0, 8_000) };
   }
@@ -140,7 +204,14 @@ export async function postVizzionPayPixReceive(
   let json: unknown;
   try {
     json = text ? JSON.parse(text) : {};
-  } catch {
+  } catch (parseErr) {
+    const pe = parseErr instanceof Error ? parseErr.message : String(parseErr);
+    logVizzionPayPixError("json_parse_failed_on_success_status", {
+      identifier: body.identifier,
+      httpStatus: res.status,
+      parseError: pe,
+      bodyPreview: truncateForLog(text, 8_000),
+    });
     return { ok: false, status: res.status, text: text.slice(0, 8_000) || "Resposta inválida." };
   }
 
