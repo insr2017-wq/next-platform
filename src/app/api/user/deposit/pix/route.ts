@@ -77,6 +77,23 @@ export async function POST(request: Request) {
     if (msg === "USER_BANNED") {
       return NextResponse.json({ error: "Conta suspensa." }, { status: 403 });
     }
+    if (msg === "USER_CPF_REQUIRED_FOR_PIX") {
+      return NextResponse.json(
+        {
+          error:
+            "Para gerar o Pix, cadastre o CPF do titular na sua conta (perfil / dados do Pix), com 11 dígitos.",
+        },
+        { status: 400 }
+      );
+    }
+    if (msg === "USER_CPF_INVALID_FOR_PIX") {
+      return NextResponse.json(
+        {
+          error: "O CPF cadastrado é inválido. Corrija os dados do titular no perfil e tente novamente.",
+        },
+        { status: 400 }
+      );
+    }
     if (msg === "VIZZIONPAY_NOT_CONFIGURED") {
       return NextResponse.json(
         {

@@ -84,18 +84,40 @@ function resolveClientName(user: { fullName: string; holderName: string | null }
   return "Cliente";
 }
 
-type DocumentSource = "cpf11" | "phone_tail" | "phone_only" | "placeholder";
+/** CPF com 11 dígitos e dígitos verificadores válidos (gateway rejeita telefone/placeholder). */
+function isValidCpfDigits(digits: string): boolean {
+  if (digits.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(digits)) return false;
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += parseInt(digits[i]!, 10) * (10 - i);
+  let r = (sum * 10) % 11;
+  if (r === 10 || r === 11) r = 0;
+  if (r !== parseInt(digits[9]!, 10)) return false;
+  sum = 0;
+  for (let i = 0; i < 10; i++) sum += parseInt(digits[i]!, 10) * (11 - i);
+  r = (sum * 10) % 11;
+  if (r === 10 || r === 11) r = 0;
+  return r === parseInt(digits[10]!, 10);
+}
 
-function resolveClientDocumentWithSource(user: {
-  phone: string;
-  holderCpf: string | null;
-}): { document: string; source: DocumentSource } {
+/**
+ * Documento enviado em `client.document` para a VizzionPay: apenas CPF válido do perfil (`holderCpf`).
+ */
+function resolveCpfDocumentForPixGateway(userId: string, user: { holderCpf: string | null }): string {
   const cpf = onlyDigits(user.holderCpf ?? "");
-  if (cpf.length === 11) return { document: cpf, source: "cpf11" };
-  const phoneDigits = onlyDigits(user.phone);
-  if (phoneDigits.length >= 10) return { document: phoneDigits.slice(-11), source: "phone_tail" };
-  if (phoneDigits.length > 0) return { document: phoneDigits, source: "phone_only" };
-  return { document: "00000000000", source: "placeholder" };
+  if (cpf.length !== 11) {
+    logVizzionPayPixWarn("pix_deposit_cpf_missing_or_incomplete", {
+      userId,
+      digitCount: cpf.length,
+      hint: "Cadastre o CPF do titular no perfil (dados Pix), 11 dígitos.",
+    });
+    throw new Error("USER_CPF_REQUIRED_FOR_PIX");
+  }
+  if (!isValidCpfDigits(cpf)) {
+    logVizzionPayPixWarn("pix_deposit_cpf_invalid_checksum", { userId, digitCount: cpf.length });
+    throw new Error("USER_CPF_INVALID_FOR_PIX");
+  }
+  return cpf;
 }
 
 type DepositProductLineMode = "omit_price" | "unit_from_env" | "single_qty_price_equals_amount";
@@ -174,6 +196,9 @@ export async function createVizzionPayPixDeposit(
   }
   const catalogProductId = getVizzionPayDepositProductId();
   if (!catalogProductId) {
+    logVizzionPayPixError("vizzionpay_deposit_product_id_env_missing", {
+      hint: "Defina VIZZIONPAY_DEPOSIT_PRODUCT_ID nas variáveis de ambiente (ex.: Vercel) com o ID do produto de recarga criado e ativo no painel VizzionPay.",
+    });
     throw new Error("VIZZIONPAY_DEPOSIT_PRODUCT_NOT_CONFIGURED");
   }
   const omitProductPrice = shouldOmitVizzionPayDepositProductPrice();
@@ -204,6 +229,8 @@ export async function createVizzionPayPixDeposit(
   if (!user) throw new Error("USER_NOT_FOUND");
   if (user.banned) throw new Error("USER_BANNED");
 
+  const cpfDocument = resolveCpfDocumentForPixGateway(userId, user);
+
   const phoneDigits = onlyDigits(user.phone);
   const clientPhone = phoneDigits.length >= 10 ? phoneDigits : `55${phoneDigits}`.replace(/\D/g, "");
   if (clientPhone.replace(/\D/g, "").length < 10) {
@@ -230,14 +257,6 @@ export async function createVizzionPayPixDeposit(
   const callbackUrl = `${baseUrl}/api/webhooks/vizzionpay/pix`;
 
   const clientEmail = buildSyntheticClientEmail(user.id, user.publicId);
-  const docInfo = resolveClientDocumentWithSource(user);
-  if (docInfo.source === "placeholder") {
-    logVizzionPayPixWarn("client_document_placeholder", {
-      userId,
-      depositId: deposit.id,
-      hint: "Documento enviado como 00000000000; o provedor pode rejeitar.",
-    });
-  }
 
   const { line: productLine, mode: depositProductLineMode } = buildPixDepositProductLine(
     catalogProductId,
@@ -253,7 +272,7 @@ export async function createVizzionPayPixDeposit(
       name: resolveClientName(user),
       email: clientEmail,
       phone: clientPhone,
-      document: docInfo.document,
+      document: cpfDocument,
     },
     products: [productLine],
     metadata: {
@@ -271,7 +290,7 @@ export async function createVizzionPayPixDeposit(
     document: payload.client.document,
     syntheticEmail: true,
     emailHost: extractEmailHost(clientEmail),
-    documentSource: docInfo.source,
+    documentSource: "cpf11",
     phoneDigitsLength: phoneDigits.length,
   });
 
@@ -382,7 +401,9 @@ export async function createVizzionPayPixDeposit(
       msg === "USER_BANNED" ||
       msg === "VIZZIONPAY_NOT_CONFIGURED" ||
       msg === "VIZZIONPAY_DEPOSIT_PRODUCT_NOT_CONFIGURED" ||
-      msg === "DEPOSIT_AMOUNT_INCOMPATIBLE_WITH_PRODUCT_UNIT"
+      msg === "DEPOSIT_AMOUNT_INCOMPATIBLE_WITH_PRODUCT_UNIT" ||
+      msg === "USER_CPF_REQUIRED_FOR_PIX" ||
+      msg === "USER_CPF_INVALID_FOR_PIX"
     ) {
       throw e;
     }
