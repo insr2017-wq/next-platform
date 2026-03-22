@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { isValidCpfDigits, normalizeCpfInput } from "@/lib/cpf";
 import { createVizzionPayPixDeposit } from "@/lib/deposit-vizzionpay";
 import { devErrorDetail, logDevApiError } from "@/lib/dev-api-error";
 import { logVizzionPayPixError } from "@/lib/vizzionpay-pix-log";
@@ -32,6 +34,33 @@ export async function POST(request: Request) {
   }
 
   const amount = Math.round(amountRaw * 100) / 100;
+
+  const cpfRaw = (body as { cpf?: unknown }).cpf;
+  if (cpfRaw !== undefined && cpfRaw !== null) {
+    if (typeof cpfRaw !== "string") {
+      return NextResponse.json({ error: "CPF inválido." }, { status: 400 });
+    }
+    const cpfDigits = normalizeCpfInput(cpfRaw);
+    if (cpfDigits.length > 0) {
+      if (!isValidCpfDigits(cpfDigits)) {
+        return NextResponse.json(
+          { error: "Informe um CPF válido do titular para gerar o Pix." },
+          { status: 400 }
+        );
+      }
+      try {
+        await prisma.user.update({
+          where: { id: session.userId },
+          data: { holderCpf: cpfDigits },
+        });
+      } catch {
+        return NextResponse.json(
+          { error: "Não foi possível salvar o CPF. Tente novamente." },
+          { status: 500 }
+        );
+      }
+    }
+  }
 
   try {
     const result = await createVizzionPayPixDeposit(session.userId, amount);

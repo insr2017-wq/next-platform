@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { QrCode } from "lucide-react";
+import { isValidCpfDigits } from "@/lib/cpf";
 import { Page } from "@/components/layout/Page";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -39,6 +40,22 @@ function formatInputAmount(value: number): string {
   const asInt = Math.abs(rounded - Math.round(rounded)) < 1e-9 ? Math.round(rounded) : null;
   if (asInt !== null) return String(asInt);
   return rounded.toFixed(2).replace(".", ",");
+}
+
+function onlyDigits(value: string) {
+  return value.replace(/\D/g, "");
+}
+
+function maskCPF(value: string) {
+  const d = onlyDigits(value).slice(0, 11);
+  const p1 = d.slice(0, 3);
+  const p2 = d.slice(3, 6);
+  const p3 = d.slice(6, 9);
+  const p4 = d.slice(9, 11);
+  if (d.length <= 3) return p1;
+  if (d.length <= 6) return `${p1}.${p2}`;
+  if (d.length <= 9) return `${p1}.${p2}.${p3}`;
+  return `${p1}.${p2}.${p3}-${p4}`;
 }
 
 function generateQuickAmounts(minDeposit: number) {
@@ -266,14 +283,20 @@ function PixDepositModal({
 export function DepositClient({
   initialBalance,
   minDeposit,
+  initialHolderCpf,
 }: {
   initialBalance: number;
   minDeposit: number;
+  initialHolderCpf: string | null;
 }) {
   const quickAmounts = useMemo(() => generateQuickAmounts(minDeposit), [minDeposit]);
 
   const [customAmount, setCustomAmount] = useState<string>("");
   const [selectedQuickAmount, setSelectedQuickAmount] = useState<number | null>(null);
+  const [cpf, setCpf] = useState(() => {
+    const d = onlyDigits(initialHolderCpf ?? "");
+    return d.length === 11 ? maskCPF(d) : "";
+  });
 
   const [error, setError] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -292,6 +315,11 @@ export function DepositClient({
   const handleCustomChange = (value: string) => {
     setCustomAmount(value);
     setSelectedQuickAmount(null);
+    setError("");
+  };
+
+  const handleCpfChange = (value: string) => {
+    setCpf(maskCPF(value));
     setError("");
   };
 
@@ -386,6 +414,45 @@ export function DepositClient({
         </Card>
 
         <Card>
+          <div style={{ padding: 16, display: "grid", gap: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 900, color: "rgba(17,24,39,0.72)" }}>
+              CPF do titular
+            </div>
+            <div style={{ fontSize: 12, color: "rgba(17,24,39,0.58)", lineHeight: 1.4, fontWeight: 600 }}>
+              Obrigatório para gerar o Pix. Os dados serão salvos na sua conta para próximas recargas.
+            </div>
+            <label
+              style={{
+                border: "1px solid rgba(229,231,235,0.95)",
+                borderRadius: 14,
+                background: "#fff",
+                padding: "0 12px",
+                boxShadow: "0 4px 12px rgba(17,24,39,0.04)",
+              }}
+            >
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="000.000.000-00"
+                value={cpf}
+                onChange={(e) => handleCpfChange(e.target.value)}
+                style={{
+                  width: "100%",
+                  border: 0,
+                  outline: "none",
+                  padding: "13px 0",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: "rgba(17,24,39,0.88)",
+                  background: "transparent",
+                }}
+              />
+            </label>
+          </div>
+        </Card>
+
+        <Card>
           <div
             style={{
               padding: 16,
@@ -457,6 +524,12 @@ export function DepositClient({
               return;
             }
 
+            const cpfDigits = onlyDigits(cpf);
+            if (cpfDigits.length !== 11 || !isValidCpfDigits(cpfDigits)) {
+              setError("Informe um CPF válido do titular (11 dígitos) para gerar o Pix.");
+              return;
+            }
+
             setError("");
             setIsCreatingPix(true);
 
@@ -465,7 +538,7 @@ export function DepositClient({
                 const res = await fetch("/api/user/deposit/pix", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ amount: activeAmount }),
+                  body: JSON.stringify({ amount: activeAmount, cpf: cpfDigits }),
                 });
                 const data = (await res.json().catch(() => ({}))) as {
                   error?: string;

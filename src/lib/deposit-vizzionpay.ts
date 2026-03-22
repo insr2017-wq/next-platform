@@ -15,6 +15,7 @@ import {
   type VizzionPayPixProduct,
   type VizzionPayPixReceiveRequest,
 } from "@/lib/vizzionpay-pix-api";
+import { isValidCpfDigits, normalizeCpfInput } from "@/lib/cpf";
 import {
   buildClientLogSnapshot,
   logVizzionPayPixError,
@@ -84,27 +85,11 @@ function resolveClientName(user: { fullName: string; holderName: string | null }
   return "Cliente";
 }
 
-/** CPF com 11 dígitos e dígitos verificadores válidos (gateway rejeita telefone/placeholder). */
-function isValidCpfDigits(digits: string): boolean {
-  if (digits.length !== 11) return false;
-  if (/^(\d)\1{10}$/.test(digits)) return false;
-  let sum = 0;
-  for (let i = 0; i < 9; i++) sum += parseInt(digits[i]!, 10) * (10 - i);
-  let r = (sum * 10) % 11;
-  if (r === 10 || r === 11) r = 0;
-  if (r !== parseInt(digits[9]!, 10)) return false;
-  sum = 0;
-  for (let i = 0; i < 10; i++) sum += parseInt(digits[i]!, 10) * (11 - i);
-  r = (sum * 10) % 11;
-  if (r === 10 || r === 11) r = 0;
-  return r === parseInt(digits[10]!, 10);
-}
-
 /**
  * Documento enviado em `client.document` para a VizzionPay: apenas CPF válido do perfil (`holderCpf`).
  */
 function resolveCpfDocumentForPixGateway(userId: string, user: { holderCpf: string | null }): string {
-  const cpf = onlyDigits(user.holderCpf ?? "");
+  const cpf = normalizeCpfInput(user.holderCpf ?? "");
   if (cpf.length !== 11) {
     logVizzionPayPixWarn("pix_deposit_cpf_missing_or_incomplete", {
       userId,
