@@ -18,15 +18,18 @@ export function BottomNav({ items }: BottomNavProps) {
     <nav
       style={{
         position: "fixed",
-        left: 0,
-        right: 0,
-        bottom: 0,
+        left: "max(10px, env(safe-area-inset-left))",
+        right: "max(10px, env(safe-area-inset-right))",
+        bottom: "max(8px, env(safe-area-inset-bottom))",
         height: "var(--bottom-nav-height)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-around",
-        borderTop: "1px solid var(--border)",
-        background: "var(--bg)",
+        border: "1px solid rgba(200,224,255,0.58)",
+        background: "linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(238,246,255,0.92) 100%)",
+        backdropFilter: "blur(12px)",
+        borderRadius: 20,
+        boxShadow: "0 16px 34px rgba(7,30,77,0.24)",
         zIndex: 30,
       }}
     >
@@ -43,11 +46,12 @@ export function BottomNav({ items }: BottomNavProps) {
             style={{
               display: "grid",
               justifyItems: "center",
-              gap: 4,
+              gap: 5,
               fontSize: 11,
-              padding: 8,
+              padding: "8px 10px",
               fontWeight: isActive ? 900 : 700,
-              color: isActive ? "var(--brand)" : "rgba(17,24,39,0.55)",
+              color: isActive ? "var(--brand)" : "rgba(15,31,69,0.52)",
+              letterSpacing: 0.3,
             }}
           >
             {item.icon ? <NavIcon name={item.icon} active={isActive} /> : null}
