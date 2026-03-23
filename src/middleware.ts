@@ -38,11 +38,6 @@ function isAuthRoute(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  /** Rotas de API (webhooks, etc.) não passam por auth de sessão. */
-  if (pathname === "/api" || pathname.startsWith("/api/")) {
-    return NextResponse.next();
-  }
-
   const token = request.cookies.get(SESSION_COOKIE)?.value;
 
   let session: { role: "user" | "admin" } | null = null;
@@ -89,7 +84,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/api/:path*",
     "/",
     "/home",
     "/home/:path*",

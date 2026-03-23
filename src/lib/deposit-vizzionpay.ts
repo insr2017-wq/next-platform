@@ -162,6 +162,7 @@ export type CreateVizzionPayDepositResult = {
   depositId: string;
   identifier: string;
   gatewayTransactionId: string | null;
+  gatewayOrderId: string | null;
   orderId: string | null;
   gatewayStatus: string | null;
   pixCode: string;
@@ -339,7 +340,8 @@ export async function createVizzionPayPixDeposit(
       hasQrImage: Boolean(parsed.qrCodeImageRaw ?? parsed.pixBase64),
     });
 
-    const gatewayTxId = parsed.transactionId ?? parsed.orderId;
+    const gatewayTxId = parsed.transactionId ?? null;
+    const gatewayOrdId = parsed.orderId ?? null;
 
     await prisma.deposit.update({
       where: { id: deposit.id },
@@ -347,6 +349,7 @@ export async function createVizzionPayPixDeposit(
         status: "pending",
         gatewayProvider: "vizzionpay",
         gatewayTransactionId: gatewayTxId,
+        gatewayOrderId: gatewayOrdId,
         externalReference: identifier,
         pixCode: parsed.pixCode,
         qrCodeImage: parsed.qrCodeImageRaw ?? parsed.pixBase64 ?? null,
@@ -356,7 +359,8 @@ export async function createVizzionPayPixDeposit(
     return {
       depositId: deposit.id,
       identifier,
-      gatewayTransactionId: gatewayTxId,
+      gatewayTransactionId: gatewayTxId ?? gatewayOrdId,
+      gatewayOrderId: gatewayOrdId,
       orderId: parsed.orderId,
       gatewayStatus: parsed.status,
       pixCode: parsed.pixCode,

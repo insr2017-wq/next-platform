@@ -83,12 +83,19 @@ export function parseVizzionPayPixReceiveResponse(json: unknown): VizzionPayPixR
     pickString(pix, ["base64", "imageBase64", "image_base64", "qrCodeBase64"]) ?? null;
 
   const transactionId =
-    pickString(data, ["transactionId", "transaction_id", "id"]) ??
+    pickString(data, ["transactionId", "transaction_id"]) ??
+    (isRecord(data.payment)
+      ? pickString(data.payment, ["transactionId", "transaction_id", "gatewayTransactionId", "id"])
+      : null) ??
+    pickString(data, ["id"]) ??
     pickString(root, ["transactionId", "transaction_id"]) ??
     null;
 
   const orderId =
     (isRecord(data.order) ? pickString(data.order, ["id"]) : null) ??
+    (isRecord(data.payment) && isRecord(data.payment.order)
+      ? pickString(data.payment.order, ["id"])
+      : null) ??
     pickString(data, ["orderId", "order_id"]) ??
     (isRecord(root.order) ? pickString(root.order, ["id"]) : null) ??
     null;

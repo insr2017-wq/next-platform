@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { QrCode } from "lucide-react";
 import { isValidCpfDigits } from "@/lib/cpf";
 import { Page } from "@/components/layout/Page";
@@ -110,19 +110,33 @@ function PixDepositModal({
   open,
   onClose,
   amount,
+  depositId,
   placeholders,
+  onPaymentVerified,
 }: {
   open: boolean;
   onClose: () => void;
   amount: number;
+  depositId: string | null;
   placeholders?: Partial<PixPaymentPlaceholders>;
+  onPaymentVerified?: (balance: number) => void;
 }) {
+  const [verifying, setVerifying] = useState(false);
+  const [verifyHint, setVerifyHint] = useState<string | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<PixPaymentPlaceholders["paymentStatus"]>("Pendente");
+
+  useEffect(() => {
+    if (!open) return;
+    setPaymentStatus(placeholders?.paymentStatus ?? "Pendente");
+    setVerifyHint(null);
+  }, [open, placeholders?.paymentStatus]);
+
   if (!open) return null;
 
   const resolvedPlaceholders: PixPaymentPlaceholders = {
     qrCodeImage: placeholders?.qrCodeImage ?? null,
     pixCode: placeholders?.pixCode ?? null,
-    paymentStatus: placeholders?.paymentStatus ?? "Pendente",
+    paymentStatus,
   };
 
   const copyCode = async () => {
@@ -137,6 +151,8 @@ function PixDepositModal({
 
   const qrSrc = normalizeQrImageSrc(resolvedPlaceholders.qrCodeImage);
 
+  const overlayPad = "max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left))";
+
   return (
     <div
       role="dialog"
@@ -148,8 +164,14 @@ function PixDepositModal({
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        padding: 12,
+        padding: overlayPad,
         zIndex: 50,
+        overflowY: "auto",
+        overflowX: "hidden",
+        WebkitOverflowScrolling: "touch",
+        overscrollBehavior: "contain",
+        boxSizing: "border-box",
+        minHeight: "100dvh",
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -157,24 +179,41 @@ function PixDepositModal({
     >
       <div
         style={{
-          width: "100%",
-          maxWidth: 400,
+          width: "min(100%, 400px)",
+          maxWidth: "100%",
+          maxHeight: "min(92dvh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px))",
           background: "var(--surface)",
           border: "1px solid rgba(229,231,235,0.95)",
           borderRadius: 16,
           boxShadow: "0 22px 60px rgba(0,0,0,0.18)",
           overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          minHeight: 0,
+          margin: "auto",
+          flexShrink: 0,
         }}
       >
         <div
           style={{
-            padding: 12,
+            padding: "12px 12px 10px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            gap: 10,
+            flexShrink: 0,
+            borderBottom: "1px solid rgba(229,231,235,0.6)",
           }}
         >
-          <div style={{ fontSize: 13, fontWeight: 900, color: "rgba(17,24,39,0.92)" }}>
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 900,
+              color: "rgba(17,24,39,0.92)",
+              lineHeight: 1.25,
+              minWidth: 0,
+            }}
+          >
             Pagamento via Pix
           </div>
           <button
@@ -190,6 +229,7 @@ function PixDepositModal({
               fontWeight: 900,
               cursor: "pointer",
               color: "rgba(17,24,39,0.72)",
+              flexShrink: 0,
             }}
           >
             Fechar
@@ -201,8 +241,10 @@ function PixDepositModal({
             padding: 12,
             display: "grid",
             gap: 10,
-            maxHeight: "calc(100vh - 220px)",
+            flex: 1,
+            minHeight: 0,
             overflowY: "auto",
+            overflowX: "hidden",
             WebkitOverflowScrolling: "touch",
           }}
         >
@@ -213,7 +255,10 @@ function PixDepositModal({
           <div
             style={{
               width: "100%",
-              aspectRatio: "1 / 0.86",
+              maxWidth: 280,
+              margin: "0 auto",
+              aspectRatio: "1",
+              maxHeight: "min(42dvh, 280px)",
               borderRadius: 14,
               border: "1px dashed rgba(229,231,235,0.95)",
               background: "rgba(22,101,52,0.03)",
@@ -223,8 +268,9 @@ function PixDepositModal({
               fontWeight: 900,
               fontSize: 11,
               textAlign: "center",
-              padding: 12,
+              padding: 10,
               overflow: "hidden",
+              boxSizing: "border-box",
             }}
           >
             {qrSrc ? (
@@ -274,6 +320,73 @@ function PixDepositModal({
           <div style={{ fontSize: 12, color: "rgba(17,24,39,0.62)", lineHeight: 1.35, fontWeight: 700 }}>
             Após a confirmação do pagamento, o saldo será atualizado automaticamente.
           </div>
+
+          {verifyHint ? (
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 800,
+                color: verifyHint.includes("confirmado") ? "rgba(22,101,52,0.95)" : "rgba(185,28,28,1)",
+                lineHeight: 1.35,
+              }}
+            >
+              {verifyHint}
+            </div>
+          ) : null}
+
+          <Button
+            type="button"
+            fullWidth={true}
+            disabled={!depositId || verifying || paymentStatus === "Pago"}
+            style={{
+              borderRadius: 12,
+              padding: "12px 12px",
+              fontSize: 13,
+              fontWeight: 900,
+              boxShadow: "none",
+              opacity: !depositId || verifying || paymentStatus === "Pago" ? 0.65 : 1,
+            }}
+            onClick={() => {
+              if (!depositId || verifying) return;
+              setVerifying(true);
+              setVerifyHint(null);
+              void (async () => {
+                try {
+                  const res = await fetch(`/api/user/deposit/${depositId}/verify`, {
+                    method: "POST",
+                  });
+                  const data = (await res.json().catch(() => ({}))) as {
+                    ok?: boolean;
+                    balance?: number;
+                    error?: string;
+                  };
+                  if (res.ok && data.ok) {
+                    setPaymentStatus("Pago");
+                    setVerifyHint("Pagamento confirmado! Seu saldo foi atualizado.");
+                    if (typeof data.balance === "number") {
+                      onPaymentVerified?.(data.balance);
+                    }
+                  } else {
+                    setVerifyHint(
+                      typeof data.error === "string" && data.error.trim()
+                        ? data.error
+                        : "Não foi possível confirmar ainda. Tente novamente em instantes."
+                    );
+                  }
+                } catch {
+                  setVerifyHint("Erro de rede ao confirmar. Tente novamente.");
+                } finally {
+                  setVerifying(false);
+                }
+              })();
+            }}
+          >
+            {verifying
+              ? "Verificando pagamento…"
+              : paymentStatus === "Pago"
+                ? "Pagamento confirmado"
+                : "Já paguei — verificar agora"}
+          </Button>
         </div>
       </div>
     </div>
@@ -301,6 +414,8 @@ export function DepositClient({
   const [error, setError] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalAmount, setModalAmount] = useState<number>(0);
+  const [modalDepositId, setModalDepositId] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState(initialBalance);
   const [isCreatingPix, setIsCreatingPix] = useState(false);
   const [modalPayment, setModalPayment] = useState<Partial<PixPaymentPlaceholders>>({});
 
@@ -338,7 +453,7 @@ export function DepositClient({
               Saldo disponível
             </div>
             <div style={{ fontSize: 24, fontWeight: 900, color: "rgba(17,24,39,0.92)" }}>
-              {formatCurrency(initialBalance)}
+              {formatCurrency(walletBalance)}
             </div>
           </div>
         </Card>
@@ -542,6 +657,7 @@ export function DepositClient({
                 });
                 const data = (await res.json().catch(() => ({}))) as {
                   error?: string;
+                  depositId?: string;
                   pixCode?: string;
                   qrCodeImageRaw?: string | null;
                 };
@@ -556,6 +672,7 @@ export function DepositClient({
                 }
 
                 setModalAmount(activeAmount);
+                setModalDepositId(typeof data.depositId === "string" ? data.depositId : null);
                 setModalPayment({
                   pixCode: data.pixCode ?? null,
                   qrCodeImage: data.qrCodeImageRaw ?? null,
@@ -591,9 +708,14 @@ export function DepositClient({
 
         <PixDepositModal
           open={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => {
+            setIsModalOpen(false);
+            setModalDepositId(null);
+          }}
           amount={modalAmount}
+          depositId={modalDepositId}
           placeholders={modalPayment}
+          onPaymentVerified={(b) => setWalletBalance(b)}
         />
       </div>
     </Page>

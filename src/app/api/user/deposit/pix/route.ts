@@ -69,6 +69,7 @@ export async function POST(request: Request) {
       depositId: result.depositId,
       identifier: result.identifier,
       gatewayTransactionId: result.gatewayTransactionId,
+      gatewayOrderId: result.gatewayOrderId,
       orderId: result.orderId,
       gatewayStatus: result.gatewayStatus,
       pixCode: result.pixCode,
