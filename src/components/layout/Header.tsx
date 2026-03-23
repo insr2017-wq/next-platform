@@ -17,12 +17,13 @@ export function Header({ title, backHref, tone = "brand" }: HeaderProps) {
         height: "var(--header-height)",
         display: "flex",
         alignItems: "center",
-        borderBottom: isBrand ? "1px solid rgba(198,220,255,0.22)" : "1px solid var(--border)",
+        borderBottom: isBrand ? "none" : "1px solid var(--border)",
+        backdropFilter: "blur(8px)",
         background: isBrand
-          ? "linear-gradient(120deg, rgba(11,47,110,0.94) 0%, rgba(15,76,179,0.92) 58%, rgba(11,114,211,0.9) 100%)"
-          : "rgba(255,255,255,0.88)",
-        backdropFilter: "blur(10px)",
-        color: isBrand ? "#f4f8ff" : "var(--text)",
+          ? "linear-gradient(160deg, var(--brand) 0%, var(--brand-2) 100%)"
+          : "rgba(255,255,255,0.9)",
+        color: isBrand ? "#fff" : "var(--text)",
+        boxShadow: isBrand ? "0 6px 18px rgba(var(--brand-rgb), 0.22)" : "none",
       }}
     >
       <div
@@ -41,28 +42,24 @@ export function Header({ title, backHref, tone = "brand" }: HeaderProps) {
           {backHref ? (
             <Link
               href={backHref}
-              aria-label="Voltar"
               style={{
                 color: "inherit",
-                fontWeight: 900,
-                width: 38,
-                height: 38,
-                borderRadius: 12,
-                border: isBrand ? "1px solid rgba(220,234,255,0.28)" : "1px solid var(--border)",
-                background: isBrand ? "rgba(255,255,255,0.12)" : "rgba(15,76,179,0.06)",
-                display: "grid",
+                fontWeight: 800,
+                display: "inline-grid",
                 placeItems: "center",
-                fontSize: 20,
-                lineHeight: 1,
+                width: 36,
+                height: 36,
+                borderRadius: 12,
+                border: isBrand ? "1px solid rgba(255,255,255,0.28)" : "1px solid var(--border)",
+                background: isBrand ? "rgba(255,255,255,0.1)" : "var(--surface)",
               }}
+              aria-label="Voltar"
             >
               ←
             </Link>
           ) : null}
         </div>
-        <div style={{ justifySelf: "center", fontWeight: 900, letterSpacing: 0.4, fontSize: 18 }}>
-          {title}
-        </div>
+        <div style={{ justifySelf: "center", fontWeight: 900, letterSpacing: 0.2 }}>{title}</div>
         <div />
       </div>
     </header>

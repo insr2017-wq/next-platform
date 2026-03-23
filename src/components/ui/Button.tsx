@@ -19,19 +19,17 @@ export function Button({
       {...props}
       style={{
         appearance: "none",
-        border: isPrimary ? "1px solid rgba(35,149,255,0.45)" : "1px solid rgba(163,193,230,0.5)",
+        border: isPrimary ? "1px solid rgba(var(--brand-rgb), 0.35)" : "1px solid var(--border)",
         background: isPrimary
-          ? "linear-gradient(135deg, var(--brand-2) 0%, var(--brand) 100%)"
-          : "rgba(255,255,255,0.86)",
-        color: isPrimary ? "#eef6ff" : "var(--text)",
+          ? "linear-gradient(160deg, var(--brand) 0%, var(--brand-2) 100%)"
+          : "var(--surface)",
+        color: isPrimary ? "#fff" : "var(--text)",
         borderRadius: 16,
-        padding: "12px 16px",
+        padding: "12px 15px",
         fontWeight: 800,
         width: fullWidth ? "100%" : undefined,
         cursor: "pointer",
-        boxShadow: isPrimary
-          ? "0 10px 20px rgba(14,84,189,0.28)"
-          : "0 6px 14px rgba(11,45,106,0.1)",
+        boxShadow: isPrimary ? "0 8px 18px rgba(var(--brand-rgb), 0.25)" : "none",
         ...style,
       }}
     />

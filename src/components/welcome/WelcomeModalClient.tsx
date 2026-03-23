@@ -27,10 +27,10 @@ export function WelcomeModalClient({ enabled, title, text, link }: Props) {
 
   const buttonStyle = {
     borderRadius: 999,
-    padding: "13px 16px",
+    padding: "12px 14px",
     fontSize: 14,
     fontWeight: 900,
-    boxShadow: "0 12px 26px rgba(8,58,141,0.3)",
+    boxShadow: "0 10px 20px var(--brand-shadow)",
   } as const;
 
   return (
@@ -40,7 +40,7 @@ export function WelcomeModalClient({ enabled, title, text, link }: Props) {
       style={{
         position: "fixed",
         inset: 0,
-        background: "linear-gradient(180deg, rgba(6,26,67,0.72) 0%, rgba(6,26,67,0.54) 100%)",
+        background: "rgba(17,24,39,0.45)",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
@@ -55,39 +55,25 @@ export function WelcomeModalClient({ enabled, title, text, link }: Props) {
         style={{
           width: "100%",
           maxWidth: 520,
-          background:
-            "linear-gradient(180deg, rgba(8,52,130,0.97) 0%, rgba(6,34,88,0.98) 55%, rgba(7,27,72,0.99) 100%)",
-          border: "1px solid rgba(182,213,255,0.24)",
-          borderRadius: 24,
-          boxShadow: "0 30px 70px rgba(0,0,0,0.35)",
+          background: "var(--surface)",
+          border: "1px solid rgba(229,231,235,0.95)",
+          borderRadius: 18,
+          boxShadow: "0 22px 60px rgba(0,0,0,0.18)",
           overflow: "hidden",
         }}
       >
         <div
           style={{
-            minHeight: 120,
-            padding: 16,
+            padding: 14,
+            borderBottom: "1px solid var(--border)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             position: "relative",
-            background:
-              "linear-gradient(180deg, rgba(19,116,212,0.28) 0%, rgba(19,116,212,0.08) 70%, transparent 100%)",
           }}
         >
-          <div
-            style={{
-              fontSize: 34,
-              lineHeight: 1.03,
-              fontWeight: 900,
-              color: "#f2f8ff",
-              textAlign: "center",
-              textTransform: "uppercase",
-              letterSpacing: 1.1,
-            }}
-          >
-            Notificacao
-            <div style={{ fontSize: 20, letterSpacing: 2.4, opacity: 0.9 }}>Importante</div>
+          <div style={{ fontSize: 14, fontWeight: 900, color: "rgba(17,24,39,0.92)", textAlign: "center" }}>
+            {safeTitle}
           </div>
 
           <button
@@ -98,12 +84,12 @@ export function WelcomeModalClient({ enabled, title, text, link }: Props) {
               position: "absolute",
               right: 10,
               top: 10,
-              width: 30,
-              height: 30,
+              width: 28,
+              height: 28,
               borderRadius: 999,
-              border: "1px solid rgba(182,213,255,0.4)",
-              background: "rgba(255,255,255,0.12)",
-              color: "rgba(241,248,255,0.9)",
+              border: "1px solid rgba(229,231,235,0.95)",
+              background: "#fff",
+              color: "rgba(17,24,39,0.72)",
               fontWeight: 900,
               cursor: "pointer",
               boxShadow: "none",
@@ -115,36 +101,23 @@ export function WelcomeModalClient({ enabled, title, text, link }: Props) {
           </button>
         </div>
 
-        <div style={{ padding: "4px 18px 18px" }}>
-          <div style={{ fontSize: 38, fontWeight: 900, color: "#f5f9ff", lineHeight: 1, marginBottom: 8 }}>
-            Bem-vindo
-          </div>
+        <div style={{ padding: 14 }}>
           <div
             style={{
-              fontSize: 22,
-              color: "#f2f8ff",
-              fontWeight: 900,
-              lineHeight: 1.2,
+              fontSize: 13,
+              color: "rgba(17,24,39,0.78)",
+              fontWeight: 800,
+              lineHeight: 1.5,
               whiteSpace: "pre-wrap",
-              maxWidth: 470,
-            }}
-          >
-            {safeTitle}
-          </div>
-          <div
-            style={{
-              marginTop: 10,
-              fontSize: 20,
-              color: "rgba(228,240,255,0.94)",
-              fontWeight: 500,
-              lineHeight: 1.35,
-              whiteSpace: "pre-wrap",
+              textAlign: "center",
+              maxWidth: 460,
+              margin: "0 auto",
             }}
           >
             {text}
           </div>
 
-          <div style={{ marginTop: 18, display: "grid", gap: 10 }}>
+          <div style={{ marginTop: 14, display: "flex", justifyContent: "center" }}>
             {hasLink ? (
               <a
                 href={safeLink}
@@ -157,16 +130,14 @@ export function WelcomeModalClient({ enabled, title, text, link }: Props) {
                   alignItems: "center",
                   justifyContent: "center",
                   textDecoration: "none",
-                  border: "1px solid rgba(57,196,255,0.68)",
-                  background: "linear-gradient(180deg, #18b8f7 0%, #1296dc 100%)",
+                  border: "1px solid var(--brand)",
+                  background: "var(--brand)",
                   color: "#fff",
-                  width: "100%",
+                  width: "auto",
                   cursor: "pointer",
-                  textTransform: "uppercase",
-                  letterSpacing: 1.1,
                 }}
               >
-                Acessar grupo oficial
+                Entrar no grupo
               </a>
             ) : (
               <Button
@@ -177,31 +148,11 @@ export function WelcomeModalClient({ enabled, title, text, link }: Props) {
                   opacity: 0.65,
                   cursor: "not-allowed",
                   boxShadow: "none",
-                  width: "100%",
-                  textTransform: "uppercase",
-                  letterSpacing: 1.1,
                 }}
               >
-                Acessar grupo oficial
+                Entrar no grupo
               </Button>
             )}
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setOpen(false)}
-              style={{
-                ...buttonStyle,
-                width: "100%",
-                background: "rgba(255,255,255,0.94)",
-                border: "1px solid rgba(255,255,255,0.95)",
-                color: "#0d306f",
-                textTransform: "uppercase",
-                letterSpacing: 0.8,
-                boxShadow: "none",
-              }}
-            >
-              OK
-            </Button>
           </div>
         </div>
       </div>

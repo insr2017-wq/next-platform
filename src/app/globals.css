@@ -1,32 +1,35 @@
+/* Intentionally minimal (mobile-first ready). */
+
 :root {
   --container-max: 960px;
   --gutter: 16px;
-  --header-height: 58px;
+  --header-height: 64px;
   --bottom-nav-height: 72px;
-  --border: rgba(166, 191, 224, 0.4);
-  --bg: #f4f8ff;
-  --text: #0f1f45;
-  --surface: rgba(255, 255, 255, 0.88);
-  --surface-strong: #ffffff;
-  --app-bg: radial-gradient(120% 120% at 50% -20%, #2f6dc8 0%, #184c98 36%, #0b2f6e 62%, #081f4c 100%);
-  --brand: #0f4cb3;
-  --brand-rgb: 15, 76, 179;
-  --brand-2: #0b72d3;
+  --border: #dbe7df;
+  --bg: #ffffff;
+  --text: #111827;
+  --surface: #ffffff;
+  --surface-soft: #f7fbf8;
+  --app-bg: #f2f7f4;
+  /* Green branding (logo-inspired) */
+  --brand: #166534;
+  --brand-rgb: 22, 101, 52;
+  --brand-2: #0f5132;
   --brand-light: rgba(var(--brand-rgb), 0.12);
-  --brand-border: rgba(var(--brand-rgb), 0.3);
-  --brand-shadow: rgba(11, 80, 192, 0.28);
-  --accent: #2ec5ff;
-  --text-soft: rgba(15, 31, 69, 0.66);
+  --brand-border: rgba(var(--brand-rgb), 0.23);
+  --brand-shadow: rgba(var(--brand-rgb), 0.28);
+  --accent: #ca8a04;
 }
 
 html,
 body {
   padding: 0;
   margin: 0;
-  background: var(--app-bg);
+  background:
+    radial-gradient(1200px 350px at 50% -160px, rgba(var(--brand-rgb), 0.16) 0%, rgba(var(--brand-rgb), 0.04) 45%, transparent 70%),
+    var(--app-bg);
   color: var(--text);
-  min-height: 100%;
-  font-family: "Inter", "Segoe UI", "Roboto", sans-serif;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 * {
@@ -55,13 +58,6 @@ a {
   100% {
     transform: translateX(-50%);
   }
-}
-
-/* Subtle glass card utility used by inline-style heavy pages */
-.surface-glass {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  backdrop-filter: blur(10px);
 }
 
 

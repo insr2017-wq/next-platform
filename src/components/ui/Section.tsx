@@ -12,12 +12,10 @@ export function Section({ title, subtitle, children }: SectionProps) {
       {(title || subtitle) && (
         <div style={{ display: "grid", gap: 4, paddingBottom: 2 }}>
           {title ? (
-            <div style={{ fontSize: 14, fontWeight: 900, color: "rgba(10,30,72,0.95)", letterSpacing: 0.2 }}>
-              {title}
-            </div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "rgba(17,24,39,0.92)" }}>{title}</div>
           ) : null}
           {subtitle ? (
-            <div style={{ fontSize: 12, opacity: 0.78, color: "rgba(15,31,69,0.72)" }}>{subtitle}</div>
+            <div style={{ fontSize: 12, opacity: 0.7, color: "rgba(17,24,39,0.75)" }}>{subtitle}</div>
           ) : null}
         </div>
       )}

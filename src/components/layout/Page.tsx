@@ -24,7 +24,7 @@ export function Page({ title, backHref, children, headerTone, topBanner, hideHea
   const bannerFullWidth = topBanner?.fullWidth === true;
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh" }}>
+    <div style={{ position: "relative" }}>
       {!hideHeader && (
         <Header title={title} backHref={backHref} tone={headerTone} />
       )}
@@ -45,7 +45,6 @@ export function Page({ title, backHref, children, headerTone, topBanner, hideHea
                   marginRight: "var(--gutter)",
                   width: "calc(100% - 2 * var(--gutter))",
                   maxWidth: "calc(var(--container-max) - 2 * var(--gutter))",
-                  boxShadow: "0 20px 44px rgba(8,32,82,0.28)",
                 }),
           }}
         >
@@ -67,7 +66,7 @@ export function Page({ title, backHref, children, headerTone, topBanner, hideHea
               inset: 0,
               borderRadius: bannerFullWidth ? 0 : 20,
               background:
-                "linear-gradient(to top, rgba(5,27,75,0.58) 0%, rgba(5,27,75,0.16) 44%, transparent 75%)",
+                "linear-gradient(to top, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.12) 45%, transparent 75%)",
               pointerEvents: "none",
             }}
           />
@@ -77,9 +76,9 @@ export function Page({ title, backHref, children, headerTone, topBanner, hideHea
         <Container>
           <main
             style={{
-              paddingTop: hasBanner ? 28 : hideHeader ? 22 : 14,
+              paddingTop: hasBanner ? 26 : hideHeader ? 24 : 18,
               marginTop: hasBanner ? -44 : 0,
-              paddingBottom: 24,
+              paddingBottom: 20,
             }}
           >
             {children}

@@ -18,18 +18,19 @@ export function BottomNav({ items }: BottomNavProps) {
     <nav
       style={{
         position: "fixed",
-        left: "max(10px, env(safe-area-inset-left))",
-        right: "max(10px, env(safe-area-inset-right))",
-        bottom: "max(8px, env(safe-area-inset-bottom))",
+        left: "50%",
+        transform: "translateX(-50%)",
+        bottom: 10,
+        width: "min(calc(100% - 18px), var(--container-max))",
         height: "var(--bottom-nav-height)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-around",
-        border: "1px solid rgba(200,224,255,0.58)",
-        background: "linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(238,246,255,0.92) 100%)",
-        backdropFilter: "blur(12px)",
+        border: "1px solid rgba(var(--brand-rgb), 0.12)",
         borderRadius: 20,
-        boxShadow: "0 16px 34px rgba(7,30,77,0.24)",
+        background: "rgba(255,255,255,0.92)",
+        backdropFilter: "blur(10px)",
+        boxShadow: "0 12px 30px rgba(17,24,39,0.16)",
         zIndex: 30,
       }}
     >
@@ -46,12 +47,13 @@ export function BottomNav({ items }: BottomNavProps) {
             style={{
               display: "grid",
               justifyItems: "center",
-              gap: 5,
+              gap: 4,
               fontSize: 11,
               padding: "8px 10px",
+              borderRadius: 12,
               fontWeight: isActive ? 900 : 700,
-              color: isActive ? "var(--brand)" : "rgba(15,31,69,0.52)",
-              letterSpacing: 0.3,
+              color: isActive ? "var(--brand)" : "rgba(17,24,39,0.55)",
+              background: isActive ? "rgba(var(--brand-rgb), 0.1)" : "transparent",
             }}
           >
             {item.icon ? <NavIcon name={item.icon} active={isActive} /> : null}
