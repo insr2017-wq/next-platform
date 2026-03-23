@@ -34,9 +34,10 @@ function mapDepositStatus(status: string | null | undefined): { label: "Pendente
 
 function mapWithdrawalStatus(
   status: string | null | undefined,
-): { label: "Pendente" | "Processado" | "Falhou"; tone: "warning" | "success" | "error" } {
+): { label: "Pendente" | "Processando" | "Processado" | "Falhou"; tone: "warning" | "success" | "error" } {
   const s = (status ?? "").toLowerCase();
   if (s === "pending") return { label: "Pendente", tone: "warning" };
+  if (s === "processing") return { label: "Processando", tone: "warning" };
 
   const failedStatuses = new Set([
     "failed",

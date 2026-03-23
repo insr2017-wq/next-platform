@@ -57,3 +57,22 @@ export function shouldOmitVizzionPayDepositProductPrice(): boolean {
   const v = process.env.VIZZIONPAY_DEPOSIT_PRODUCT_OMIT_PRICE?.trim().toLowerCase();
   return v === "1" || v === "true" || v === "yes";
 }
+
+const DEFAULT_TRANSFERS_URL = "https://app.vizzionpay.com.br/api/v1/gateway/transfers";
+
+function normalizeVizzionPayTransfersUrl(url: string): string {
+  return url.replace(/^https:\/\/app\.vizzionpay\.com\//i, "https://app.vizzionpay.com.br/");
+}
+
+/** Endpoint de transferência Pix (cash out). */
+export function getVizzionPayTransfersUrl(): string {
+  const fromEnv = process.env.VIZZIONPAY_TRANSFERS_URL?.trim();
+  const raw = fromEnv || DEFAULT_TRANSFERS_URL;
+  return normalizeVizzionPayTransfersUrl(raw);
+}
+
+/** Se true, aprovação admin marca como processado sem chamar a API (apenas dev / emergência). */
+export function shouldSkipVizzionPayWithdrawTransfer(): boolean {
+  const v = process.env.VIZZIONPAY_SKIP_WITHDRAW?.trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes";
+}

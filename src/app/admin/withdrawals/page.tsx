@@ -13,6 +13,7 @@ function normalizePhone(q: string): string {
 function mapWithdrawalStatus(status: string | null | undefined): { label: string; tone: "neutral" | "warning" | "success" } {
   const s = (status ?? "").toLowerCase();
   if (s === "pending") return { label: "Pendente", tone: "warning" };
+  if (s === "processing") return { label: "Processando", tone: "warning" };
   if (s === "processed") return { label: "Processado", tone: "success" };
   // Para qualquer status diferente de "pending" e "processed", mantemos como "Falhou"
   // (ex.: "failed", "rejected", "cancelled"...), para continuar compatível.

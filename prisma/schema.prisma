@@ -89,13 +89,23 @@ model Withdrawal {
   pixKey      String
   holderName  String
   holderCpf   String
-  status      String   // "pending" | "processed" | "failed"
+  status      String   // "pending" | "processing" | "processed" | "failed"
   /// ID retornado pelo gateway (quando existir).
   gatewayTransactionId String?
   /// Identificador do provedor/gateway (quando existir).
   gatewayProvider      String?
   /// Referência externa para conciliar webhooks.
   externalReference    String?
+  /// IP do cliente na solicitação de saque (para o gateway).
+  requesterIp          String?
+  /// URL de comprovante retornada pelo provedor (quando existir).
+  gatewayReceiptUrl    String?
+  /// Token de webhook retornado pelo provedor (quando existir).
+  gatewayWebhookToken  String?
+  /// Status bruto do provedor (ex.: PENDING, COMPLETED) para diagnóstico.
+  gatewayStatus        String?
+  /// Motivo de falha/recusa do provedor (quando existir).
+  gatewayFailureReason String?
   /// Data/hora em que a solicitação foi finalizada (aprovada ou recusada).
   processedAt          DateTime?
   createdAt   DateTime @default(now())

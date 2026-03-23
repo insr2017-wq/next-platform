@@ -21,7 +21,9 @@ export function AdminWithdrawalActionsClient({ withdrawalId }: Props) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(typeof data.error === "string" ? data.error : "Erro ao atualizar saque.");
+        const base = typeof data.error === "string" ? data.error : "Erro ao atualizar saque.";
+        const detail = typeof data.detail === "string" && data.detail.trim() ? `\n${data.detail}` : "";
+        throw new Error(base + detail);
       }
       router.refresh();
     } catch (e) {

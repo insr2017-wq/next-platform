@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import { getClientIpFromHeaders } from "@/lib/client-ip";
 import { prisma } from "@/lib/db";
 import { getPlatformSettings } from "@/lib/platform-settings";
 
@@ -20,6 +21,7 @@ function formatBRL(value: number): string {
 }
 
 export async function POST(request: Request) {
+  const requesterIp = getClientIpFromHeaders(request.headers);
   const session = await getSession();
   if (!session || session.role !== "user") {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
@@ -149,6 +151,7 @@ export async function POST(request: Request) {
           holderName,
           holderCpf: holderCpfDigits,
           status: "pending",
+          requesterIp: requesterIp ?? null,
         },
         select: { id: true },
       });
