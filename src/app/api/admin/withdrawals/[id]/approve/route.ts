@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { parseUserIpFromWithdrawalExternalReference } from "@/lib/client-ip";
 import { getVizzionPayConfig, shouldSkipVizzionPayWithdrawTransfer } from "@/lib/vizzionpay-config";
 import {
   executeVizzionPayWithdrawalTransfer,
@@ -39,7 +40,7 @@ export async function POST(
       pixKey: true,
       holderName: true,
       holderCpf: true,
-      requesterIp: true,
+      externalReference: true,
     },
   });
 
@@ -106,10 +107,16 @@ export async function POST(
       pixKey: withdrawal.pixKey,
       holderName: withdrawal.holderName,
       holderCpf: withdrawal.holderCpf,
-      requesterIp: withdrawal.requesterIp,
+      requesterIp: parseUserIpFromWithdrawalExternalReference(withdrawal.externalReference),
     });
 
     if (outcome.kind === "processed") {
+      logVizzionPayWithdrawEvent("withdraw_approve_provider_extras", {
+        withdrawalId: withdrawal.id,
+        receiptUrlPresent: Boolean(outcome.receiptUrl),
+        webhookTokenPresent: Boolean(outcome.webhookToken),
+        gatewayStatus: outcome.gatewayStatus,
+      });
       await prisma.withdrawal.update({
         where: { id: withdrawal.id },
         data: {
@@ -117,9 +124,6 @@ export async function POST(
           processedAt: new Date(),
           gatewayProvider: "vizzionpay",
           gatewayTransactionId: outcome.gatewayTransactionId,
-          gatewayReceiptUrl: outcome.receiptUrl,
-          gatewayWebhookToken: outcome.webhookToken,
-          gatewayStatus: outcome.gatewayStatus,
           externalReference: withdrawal.id,
         },
       });
@@ -130,15 +134,18 @@ export async function POST(
     }
 
     if (outcome.kind === "processing") {
+      logVizzionPayWithdrawEvent("withdraw_approve_provider_extras", {
+        withdrawalId: withdrawal.id,
+        receiptUrlPresent: Boolean(outcome.receiptUrl),
+        webhookTokenPresent: Boolean(outcome.webhookToken),
+        gatewayStatus: outcome.gatewayStatus,
+      });
       await prisma.withdrawal.update({
         where: { id: withdrawal.id },
         data: {
           status: "processing",
           gatewayProvider: "vizzionpay",
           gatewayTransactionId: outcome.gatewayTransactionId,
-          gatewayReceiptUrl: outcome.receiptUrl,
-          gatewayWebhookToken: outcome.webhookToken,
-          gatewayStatus: outcome.gatewayStatus,
           externalReference: withdrawal.id,
         },
       });
@@ -152,6 +159,11 @@ export async function POST(
     const refund =
       withdrawal.requestedAmount > 0 ? withdrawal.requestedAmount : Number(withdrawal.amount);
 
+    logVizzionPayWithdrawEvent("withdraw_approve_immediate_fail", {
+      withdrawalId: withdrawal.id,
+      rejectedReason: outcome.rejectedReason,
+      gatewayStatus: outcome.gatewayStatus,
+    });
     await prisma.$transaction(async (tx) => {
       await tx.withdrawal.update({
         where: { id: withdrawal.id },
@@ -159,10 +171,6 @@ export async function POST(
           status: "failed",
           processedAt: new Date(),
           gatewayProvider: "vizzionpay",
-          gatewayReceiptUrl: outcome.receiptUrl,
-          gatewayWebhookToken: outcome.webhookToken,
-          gatewayStatus: outcome.gatewayStatus,
-          gatewayFailureReason: outcome.rejectedReason ?? "Falha na transferência.",
         },
       });
       await tx.user.update({
@@ -204,7 +212,6 @@ export async function POST(
             status: "failed",
             processedAt: new Date(),
             gatewayProvider: "vizzionpay",
-            gatewayFailureReason: "Erro de comunicação com o provedor.",
           },
         });
         await tx.user.update({

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getClientIpFromHeaders } from "@/lib/client-ip";
+import { formatWithdrawalExternalReferenceForRequesterIp, getClientIpFromHeaders } from "@/lib/client-ip";
 import { prisma } from "@/lib/db";
 import { getPlatformSettings } from "@/lib/platform-settings";
 
@@ -151,7 +151,7 @@ export async function POST(request: Request) {
           holderName,
           holderCpf: holderCpfDigits,
           status: "pending",
-          requesterIp: requesterIp ?? null,
+          externalReference: formatWithdrawalExternalReferenceForRequesterIp(requesterIp),
         },
         select: { id: true },
       });

@@ -73,6 +73,12 @@ export async function processVizzionPayWithdrawWebhook(json: unknown): Promise<v
   }
 
   const parsed = parseVizzionPayTransferResponse(normalized);
+  logVizzionPayWithdrawEvent("withdraw_webhook_parsed", {
+    withdrawId: parsed.withdrawId,
+    providerStatus: parsed.status,
+    rejectedReason: parsed.rejectedReason,
+    receiptUrlPresent: Boolean(parsed.receiptUrl),
+  });
   const internal = mapVizzionPayWithdrawStatusToInternal(parsed.status);
 
   const w = await prisma.withdrawal.findUnique({
@@ -92,14 +98,6 @@ export async function processVizzionPayWithdrawWebhook(json: unknown): Promise<v
     return;
   }
 
-  const baseData = {
-    gatewayStatus: parsed.status,
-    gatewayReceiptUrl: parsed.receiptUrl ?? undefined,
-    gatewayWebhookToken: parsed.webhookToken ?? undefined,
-    gatewayFailureReason: parsed.rejectedReason ?? undefined,
-    gatewayTransactionId: parsed.withdrawId ?? undefined,
-  };
-
   if (internal === "processed") {
     await prisma.withdrawal.update({
       where: { id: w.id },
@@ -107,7 +105,7 @@ export async function processVizzionPayWithdrawWebhook(json: unknown): Promise<v
         status: "processed",
         processedAt: new Date(),
         gatewayProvider: "vizzionpay",
-        ...baseData,
+        gatewayTransactionId: parsed.withdrawId ?? undefined,
       },
     });
     logVizzionPayWithdrawEvent("withdraw_webhook_marked_processed", { withdrawalId: w.id });
@@ -123,7 +121,7 @@ export async function processVizzionPayWithdrawWebhook(json: unknown): Promise<v
           status: "failed",
           processedAt: new Date(),
           gatewayProvider: "vizzionpay",
-          ...baseData,
+          gatewayTransactionId: parsed.withdrawId ?? undefined,
         },
       });
       await tx.user.update({
@@ -143,7 +141,7 @@ export async function processVizzionPayWithdrawWebhook(json: unknown): Promise<v
     data: {
       status: "processing",
       gatewayProvider: "vizzionpay",
-      ...baseData,
+      gatewayTransactionId: parsed.withdrawId ?? undefined,
     },
   });
   logVizzionPayWithdrawEvent("withdraw_webhook_marked_processing", { withdrawalId: w.id });
