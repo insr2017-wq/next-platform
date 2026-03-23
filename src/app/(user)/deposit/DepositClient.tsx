@@ -151,7 +151,8 @@ function PixDepositModal({
 
   const qrSrc = normalizeQrImageSrc(resolvedPlaceholders.qrCodeImage);
 
-  const overlayPad = "max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left))";
+  const overlayPad =
+    "max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left))";
 
   return (
     <div
@@ -163,7 +164,7 @@ function PixDepositModal({
         background: "rgba(17,24,39,0.45)",
         display: "flex",
         justifyContent: "center",
-        alignItems: "center",
+        alignItems: "flex-start",
         padding: overlayPad,
         zIndex: 50,
         overflowY: "auto",
@@ -179,9 +180,10 @@ function PixDepositModal({
     >
       <div
         style={{
-          width: "min(100%, 400px)",
+          width: "min(100%, 390px)",
           maxWidth: "100%",
-          maxHeight: "min(92dvh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px))",
+          maxHeight:
+            "calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px)",
           background: "var(--surface)",
           border: "1px solid rgba(229,231,235,0.95)",
           borderRadius: 16,
@@ -190,7 +192,7 @@ function PixDepositModal({
           display: "flex",
           flexDirection: "column",
           minHeight: 0,
-          margin: "auto",
+          margin: "0 auto",
           flexShrink: 0,
         }}
       >
@@ -238,9 +240,9 @@ function PixDepositModal({
 
         <div
           style={{
-            padding: 12,
+            padding: "10px 10px max(10px, env(safe-area-inset-bottom))",
             display: "grid",
-            gap: 10,
+            gap: 8,
             flex: 1,
             minHeight: 0,
             overflowY: "auto",
@@ -255,10 +257,10 @@ function PixDepositModal({
           <div
             style={{
               width: "100%",
-              maxWidth: 280,
+              maxWidth: "min(72vw, 260px)",
               margin: "0 auto",
               aspectRatio: "1",
-              maxHeight: "min(42dvh, 280px)",
+              maxHeight: "min(34dvh, 240px)",
               borderRadius: 14,
               border: "1px dashed rgba(229,231,235,0.95)",
               background: "rgba(22,101,52,0.03)",
