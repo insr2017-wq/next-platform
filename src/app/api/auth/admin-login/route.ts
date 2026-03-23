@@ -15,9 +15,8 @@ import {
 import { logPrismaOrServerError } from "@/lib/prisma-error-log";
 import { authRouteLog, summarizeLoginBody } from "@/lib/auth-route-log";
 import { normalizePhone, phoneLookupVariants } from "@/lib/phone-auth";
-import { ADMIN_LOGIN_PATH } from "@/lib/routes";
 
-const ROUTE = "api/auth/login";
+const ROUTE = "api/auth/admin-login";
 
 export async function POST(request: Request) {
   authRouteLog(ROUTE, "POST iniciado");
@@ -47,13 +46,14 @@ export async function POST(request: Request) {
       );
     }
 
-    authRouteLog(ROUTE, "antes: ensureUser* (no-op em Postgres)");
     await ensureUserBannedColumnSqlite();
     await ensureUserPublicIdColumnAndBackfill();
     await ensureUserPixColumnsSqlite();
     await ensureUserCheckInColumnsSqlite();
 
-    authRouteLog(ROUTE, "findFirst User por phone (variantes BR)", { variants: phoneLookupVariants(phone) });
+    authRouteLog(ROUTE, "findFirst User por phone (variantes BR)", {
+      variants: phoneLookupVariants(phone),
+    });
     const user = await prisma.user.findFirst({
       where: { phone: { in: phoneLookupVariants(phone) } },
     });
@@ -65,13 +65,11 @@ export async function POST(request: Request) {
       );
     }
 
-    if (user.role === "admin") {
-      authRouteLog(ROUTE, "admin deve usar rota exclusiva");
+    if (user.role !== "admin") {
+      authRouteLog(ROUTE, "não é admin");
       return NextResponse.json(
-        {
-          error: `Conta de administrador: use ${ADMIN_LOGIN_PATH} para entrar.`,
-        },
-        { status: 403 }
+        { error: "Telefone ou senha incorretos." },
+        { status: 401 }
       );
     }
 
@@ -93,18 +91,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const role = "user" as const;
-    authRouteLog(ROUTE, "createToken + cookie", { role });
+    authRouteLog(ROUTE, "createToken + cookie (admin)");
     const token = await createToken({
       userId: user.id,
-      role,
+      role: "admin",
       phone: user.phone,
     });
 
     const response = NextResponse.json({
       success: true,
-      role,
-      redirectTo: "/home",
+      role: "admin" as const,
+      redirectTo: "/admin/dashboard",
     });
     response.cookies.set(SESSION_COOKIE_NAME, token, SESSION_COOKIE_OPTIONS);
     authRouteLog(ROUTE, "login ok");
@@ -115,9 +112,6 @@ export async function POST(request: Request) {
       process.env.NODE_ENV === "development" && e instanceof Error
         ? e.message
         : "Erro ao entrar. Tente novamente.";
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

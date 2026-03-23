@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { clearSessionMarker } from "@/components/auth/SessionGate";
+import { ADMIN_LOGIN_PATH } from "@/lib/routes";
 import {
   LayoutDashboard,
   Users,
@@ -47,7 +48,7 @@ export function AdminMenu({ open, onClose }: AdminMenuProps) {
       const res = await fetch("/api/auth/logout", { method: "POST" });
       if (res.ok) {
         clearSessionMarker();
-        window.location.href = "/login";
+        window.location.href = ADMIN_LOGIN_PATH;
       }
     } finally {
       setLoggingOut(false);

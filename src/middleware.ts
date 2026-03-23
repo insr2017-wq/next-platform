@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyTokenEdge } from "@/lib/auth-edge";
+import { ADMIN_LOGIN_PATH } from "@/lib/routes";
 
 const SESSION_COOKIE = "session";
 
@@ -21,7 +22,7 @@ const USER_ROUTES = [
 ];
 
 const ADMIN_PREFIX = "/admin";
-const AUTH_ROUTES = ["/login", "/register"];
+const AUTH_ROUTES = ["/login", "/register", ADMIN_LOGIN_PATH];
 
 function isUserRoute(pathname: string): boolean {
   return USER_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"));
@@ -63,7 +64,7 @@ export async function middleware(request: NextRequest) {
   // Admin routes: require admin
   if (isAdminRoute(pathname)) {
     if (!session) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      return NextResponse.redirect(new URL(ADMIN_LOGIN_PATH, request.url));
     }
     if (session.role !== "admin") {
       return NextResponse.redirect(new URL("/home", request.url));
@@ -107,5 +108,6 @@ export const config = {
     "/admin/:path*",
     "/login",
     "/register",
+    "/admin-login",
   ],
 };

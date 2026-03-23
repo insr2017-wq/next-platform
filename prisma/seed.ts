@@ -13,7 +13,7 @@ async function uniqueInviteCode(): Promise<string> {
 }
 
 /**
- * Garante uma conta de administrador para login em /login → redireciona para /admin/dashboard.
+ * Garante uma conta de administrador para login em /admin-login → redireciona para /admin/dashboard.
  * Após criar/atualizar essa conta, todos os outros usuários com role admin passam a ser "user".
  *
  * Variáveis opcionais (.env) sobrescrevem os padrões:
@@ -69,7 +69,7 @@ async function main() {
   }
 
   console.log("");
-  console.log("Acesse o painel em /login com:");
+  console.log("Acesse o painel em /admin-login com:");
   console.log("  Telefone:", adminPhone);
   console.log("  Senha:   ", adminPassword);
   console.log("  (altere a senha após o primeiro acesso em produção)");

@@ -88,14 +88,18 @@ function TextField({
   );
 }
 
-function LoginForm() {
+const isDev = process.env.NODE_ENV === "development";
+
+function AdminLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const suspended = searchParams.get("motivo") === "suspensa";
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [devSecret, setDevSecret] = useState("");
+  const [devLoading, setDevLoading] = useState(false);
+  const [devError, setDevError] = useState("");
 
   useEffect(() => {
     const fromUrl = searchParams.get("phone")?.trim();
@@ -110,7 +114,7 @@ function LoginForm() {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch("/api/auth/admin-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: phone.trim(), password }),
@@ -121,11 +125,38 @@ function LoginForm() {
         return;
       }
       markSessionActive();
-      router.push(data.redirectTo ?? "/home");
+      router.push(data.redirectTo ?? "/admin/dashboard");
     } catch {
       setError("Erro de conexão. Tente novamente.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDevAdminLogin() {
+    setDevError("");
+    if (!devSecret.trim()) {
+      setDevError("Informe a chave local.");
+      return;
+    }
+    setDevLoading(true);
+    try {
+      const res = await fetch("/api/auth/dev-admin-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ secret: devSecret.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setDevError(data.error ?? "Não foi possível entrar.");
+        return;
+      }
+      markSessionActive();
+      router.push(data.redirectTo ?? "/admin/dashboard");
+    } catch {
+      setDevError("Erro de conexão. Tente novamente.");
+    } finally {
+      setDevLoading(false);
     }
   }
 
@@ -134,65 +165,16 @@ function LoginForm() {
       <AuthHeaderCard />
 
       <div style={{ display: "grid", gap: 4 }}>
-        <div style={{ fontSize: 20, fontWeight: 900 }}>Entrar</div>
+        <div style={{ fontSize: 20, fontWeight: 900 }}>Painel administrativo</div>
         <div
           style={{
             fontSize: 13,
             color: "rgba(75,85,99,1)",
           }}
         >
-          Acesse sua conta para continuar.
+          Única entrada para administradores ({ADMIN_LOGIN_PATH}).
         </div>
       </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-        <div
-          style={{
-            fontSize: 14,
-            fontWeight: 900,
-            color: "var(--brand)",
-            textAlign: "center",
-            borderBottom: "2px solid var(--brand)",
-            paddingBottom: 6,
-          }}
-        >
-          Entrar
-        </div>
-        <button
-          type="button"
-          onClick={() => router.push("/register")}
-          style={{
-            appearance: "none",
-            border: "none",
-            background: "transparent",
-            fontSize: 14,
-            fontWeight: 700,
-            color: "rgba(55,65,81,0.65)",
-            textAlign: "center",
-            paddingBottom: 6,
-            borderBottom: "2px solid transparent",
-            cursor: "pointer",
-          }}
-        >
-          Cadastro
-        </button>
-      </div>
-
-      {suspended ? (
-        <div
-          style={{
-            fontSize: 13,
-            color: "#b45309",
-            fontWeight: 700,
-            padding: 12,
-            borderRadius: 12,
-            background: "#fffbeb",
-            border: "1px solid #fde68a",
-          }}
-        >
-          Sua conta foi suspensa. Entre em contato com o suporte.
-        </div>
-      ) : null}
 
       {error ? (
         <div
@@ -209,13 +191,13 @@ function LoginForm() {
       <div style={{ display: "grid", gap: 12 }}>
         <TextField
           label="Número de telefone"
-          placeholder="Informe seu número de telefone"
+          placeholder="Telefone da conta admin"
           value={phone}
           onChange={setPhone}
         />
         <TextField
           label="Senha"
-          placeholder="Informe sua senha"
+          placeholder="Senha"
           type="password"
           value={password}
           onChange={setPassword}
@@ -235,12 +217,12 @@ function LoginForm() {
         }}
         onClick={handleLogin}
       >
-        {loading ? "Entrando…" : "Entrar"}
+        {loading ? "Entrando…" : "Entrar no painel"}
       </Button>
 
       <button
         type="button"
-        onClick={() => router.push("/register")}
+        onClick={() => router.push("/login")}
         style={{
           border: "none",
           background: "transparent",
@@ -251,33 +233,63 @@ function LoginForm() {
           cursor: "pointer",
         }}
       >
-        Não tem uma conta?{" "}
-        <span style={{ color: "var(--brand)" }}>Cadastre-se</span>
+        É usuário? <span style={{ color: "var(--brand)" }}>Entrar no app</span>
       </button>
 
-      <button
-        type="button"
-        onClick={() => router.push(ADMIN_LOGIN_PATH)}
-        style={{
-          border: "none",
-          background: "transparent",
-          fontSize: 12,
-          fontWeight: 700,
-          color: "rgba(55,65,81,0.55)",
-          textAlign: "center",
-          cursor: "pointer",
-        }}
-      >
-        Acesso administrativo
-      </button>
+      {isDev ? (
+        <div
+          style={{
+            marginTop: 8,
+            padding: 14,
+            borderRadius: 14,
+            border: "1px dashed rgba(107,114,128,0.45)",
+            background: "rgba(249,250,251,0.9)",
+            display: "grid",
+            gap: 10,
+          }}
+        >
+          <div style={{ fontSize: 12, fontWeight: 800, color: "rgba(75,85,99,1)" }}>
+            Desenvolvimento — login rápido (chave local)
+          </div>
+          <div style={{ fontSize: 12, color: "rgba(75,85,99,0.9)", lineHeight: 1.45 }}>
+            Defina <code style={{ fontSize: 11 }}>ADMIN_DEV_BYPASS</code> no{" "}
+            <code style={{ fontSize: 11 }}>.env</code> (mín. 8 caracteres). URL com telefone:{" "}
+            <code style={{ fontSize: 11 }}>{ADMIN_LOGIN_PATH}?phone=</code>
+          </div>
+          <TextField
+            label="Chave local (ADMIN_DEV_BYPASS)"
+            placeholder="Mesma chave do .env"
+            type="password"
+            value={devSecret}
+            onChange={setDevSecret}
+          />
+          {devError ? (
+            <div style={{ fontSize: 12, color: "#b91c1c", fontWeight: 700 }}>{devError}</div>
+          ) : null}
+          <Button
+            type="button"
+            fullWidth
+            disabled={devLoading}
+            style={{
+              borderRadius: 999,
+              padding: "12px 16px",
+              fontSize: 14,
+              fontWeight: 800,
+            }}
+            onClick={handleDevAdminLogin}
+          >
+            {devLoading ? "Entrando…" : "Entrar como admin (sem telefone/senha)"}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   return (
     <Suspense fallback={<div style={{ padding: 24 }}>Carregando…</div>}>
-      <LoginForm />
+      <AdminLoginForm />
     </Suspense>
   );
 }
