@@ -1,7 +1,6 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-import { del, put } from "@vercel/blob";
+import { getStorageAdapter } from "@/lib/storage";
 
+/** Legacy local URL prefix (public/uploads → /uploads/...) */
 export const PRODUCT_UPLOAD_URL_PREFIX = "/uploads/products";
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -12,11 +11,21 @@ const ALLOWED_TYPES: Record<string, string> = {
   "image/gif": ".gif",
 };
 
-function hasBlobToken(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim());
+/** Object key: products/{productId}{ext} — no leading slash. */
+export function buildProductImageKey(productId: string, ext: string): string {
+  const id = sanitizeProductId(productId);
+  const e = ext.startsWith(".") ? ext : `.${ext}`;
+  return `products/${id}${e}`;
 }
 
-/** URLs públicas do Vercel Blob (produção serverless). */
+function sanitizeProductId(productId: string): string {
+  const id = productId.trim();
+  if (!/^[a-z0-9]+$/i.test(id) || id.length > 64) {
+    throw new Error("Identificador de produto inválido.");
+  }
+  return id;
+}
+
 export function isVercelBlobProductImageUrl(url: string): boolean {
   const t = url?.trim() ?? "";
   if (!t.startsWith("https://")) return false;
@@ -28,46 +37,28 @@ export function isVercelBlobProductImageUrl(url: string): boolean {
   }
 }
 
-/** Imagem gerenciada por nós (disco local em dev ou Blob em produção). */
+/** Paths we uploaded (local, Blob, or S3-style products/... keys in URL path). */
 export function isManagedProductImage(url: string): boolean {
   const t = url?.trim() ?? "";
   if (!t) return false;
   if (t.startsWith(`${PRODUCT_UPLOAD_URL_PREFIX}/`)) return true;
-  return isVercelBlobProductImageUrl(t);
+  if (isVercelBlobProductImageUrl(t)) return true;
+  try {
+    const u = new URL(t);
+    return /^\/products\/[a-z0-9]+\.(jpe?g|png|webp|gif)$/i.test(u.pathname);
+  } catch {
+    return false;
+  }
 }
 
-/** @deprecated use isManagedProductImage — mantido para compat. */
+/** @deprecated use isManagedProductImage */
 export function isStoredProductImage(url: string): boolean {
   return (url?.trim() ?? "").startsWith(`${PRODUCT_UPLOAD_URL_PREFIX}/`);
 }
 
-export function getProductUploadDir(): string {
-  return path.join(process.cwd(), "public", "uploads", "products");
-}
-
-export async function ensureProductUploadDir(): Promise<void> {
-  await fs.mkdir(getProductUploadDir(), { recursive: true });
-}
-
-async function saveProductImageToLocalDisk(productId: string, file: File, ext: string): Promise<string> {
-  await ensureProductUploadDir();
-  const filename = `${productId}${ext}`;
-  const fullPath = path.join(getProductUploadDir(), filename);
-  const buf = Buffer.from(await file.arrayBuffer());
-  await fs.writeFile(fullPath, buf);
-  return `${PRODUCT_UPLOAD_URL_PREFIX}/${filename}`;
-}
-
-async function saveProductImageToVercelBlob(productId: string, file: File, ext: string): Promise<string> {
-  const pathname = `products/${productId}${ext}`;
-  const blob = await put(pathname, file, {
-    access: "public",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-  });
-  return blob.url;
-}
-
+/**
+ * Validate image, upload via configured storage adapter, return public URL for the database.
+ */
 export async function saveProductImageFile(productId: string, file: File): Promise<string> {
   if (!file || file.size === 0) {
     throw new Error("Nenhum arquivo enviado.");
@@ -80,42 +71,18 @@ export async function saveProductImageFile(productId: string, file: File): Promi
     throw new Error("Use JPG, PNG, WebP ou GIF.");
   }
 
-  if (hasBlobToken()) {
-    return saveProductImageToVercelBlob(productId, file, ext);
-  }
-
-  if (process.env.VERCEL) {
-    throw new Error(
-      "Armazenamento em disco não está disponível na Vercel. Crie um store em vercel.com/storage/blob, ligue ao projeto e defina a variável BLOB_READ_WRITE_TOKEN no ambiente."
-    );
-  }
-
-  return saveProductImageToLocalDisk(productId, file, ext);
+  const key = buildProductImageKey(productId, ext);
+  const buf = Buffer.from(await file.arrayBuffer());
+  const adapter = getStorageAdapter();
+  const { url } = await adapter.upload(buf, key, {
+    contentType: file.type,
+  });
+  return url;
 }
 
 export async function deleteProductImageByUrl(imageUrl: string): Promise<void> {
   const t = imageUrl?.trim() ?? "";
-  if (!t) return;
-
-  if (isVercelBlobProductImageUrl(t)) {
-    try {
-      await del(t);
-    } catch {
-      /* já removido ou URL inválida */
-    }
-    return;
-  }
-
-  if (!t.startsWith(`${PRODUCT_UPLOAD_URL_PREFIX}/`)) return;
-  const base = path.basename(t);
-  if (!base || base.includes("..") || base.includes("/") || base.includes("\\")) {
-    return;
-  }
-  const full = path.join(getProductUploadDir(), base);
-  if (!full.startsWith(getProductUploadDir())) return;
-  try {
-    await fs.unlink(full);
-  } catch {
-    /* arquivo já removido */
-  }
+  if (!t || !isManagedProductImage(t)) return;
+  const adapter = getStorageAdapter();
+  await adapter.deleteByPublicUrl(t);
 }

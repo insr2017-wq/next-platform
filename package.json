@@ -17,6 +17,7 @@
     "db:promote-admin": "tsx scripts/promote-existing-user-to-admin.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1014.0",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "@vercel/blob": "^2.3.1",
