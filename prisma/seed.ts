@@ -1,35 +1,69 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { prisma } from "../src/lib/db";
+import { generateInviteCode } from "../src/lib/invite-code";
 
+async function uniqueInviteCode(): Promise<string> {
+  for (let i = 0; i < 40; i++) {
+    const code = generateInviteCode();
+    const taken = await prisma.user.findUnique({ where: { inviteCode: code } });
+    if (!taken) return code;
+  }
+  throw new Error("Não foi possível gerar inviteCode único para o seed.");
+}
+
+/**
+ * Garante uma conta de administrador para login em /login → redireciona para /admin/dashboard.
+ *
+ * Variáveis opcionais (.env):
+ *   ADMIN_SEED_PHONE=11999999999
+ *   ADMIN_SEED_PASSWORD=admin123
+ */
 async function main() {
-  const adminPhone = "11999999999";
-  const adminPassword = "admin123";
+  const adminPhone = (process.env.ADMIN_SEED_PHONE ?? "11999999999").replace(/\D/g, "").trim();
+  const adminPassword = (process.env.ADMIN_SEED_PASSWORD ?? "admin123").trim();
 
-  const existing = await prisma.user.findUnique({ where: { phone: adminPhone } });
-  if (existing) {
-    console.log("Admin user already exists (phone:", adminPhone, "). Skipping seed.");
-    return;
+  if (adminPhone.length < 10) {
+    throw new Error("ADMIN_SEED_PHONE deve ter ao menos 10 dígitos.");
+  }
+  if (adminPassword.length < 6) {
+    throw new Error("ADMIN_SEED_PASSWORD deve ter ao menos 6 caracteres.");
   }
 
   const passwordHash = await bcrypt.hash(adminPassword, 12);
-  const inviteCode = "00000000"; // seed admin code; in production use generateInviteCode()
 
-  await prisma.user.create({
-    data: {
-      fullName: "Admin",
-      phone: adminPhone,
-      passwordHash,
-      role: "admin",
-      balance: 0,
-      inviteCode,
-    },
-  });
+  const existing = await prisma.user.findUnique({ where: { phone: adminPhone } });
 
-  console.log("Default admin user created.");
-  console.log("  Phone:", adminPhone);
-  console.log("  Password:", adminPassword);
-  console.log("  Use these to log in and get redirected to /admin/dashboard");
+  if (existing) {
+    await prisma.user.update({
+      where: { id: existing.id },
+      data: {
+        role: "admin",
+        passwordHash,
+        fullName: existing.fullName?.trim() ? existing.fullName : "Administrador",
+      },
+    });
+    console.log("Usuário existente promovido/atualizado como admin.");
+  } else {
+    const inviteCode = await uniqueInviteCode();
+    await prisma.user.create({
+      data: {
+        fullName: "Administrador",
+        phone: adminPhone,
+        passwordHash,
+        role: "admin",
+        balance: 0,
+        inviteCode,
+      },
+    });
+    console.log("Conta admin criada.");
+  }
+
+  console.log("");
+  console.log("Acesse o painel em /login com:");
+  console.log("  Telefone:", adminPhone);
+  console.log("  Senha:   ", adminPassword);
+  console.log("  (altere a senha após o primeiro acesso em produção)");
 }
 
 main()
