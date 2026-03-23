@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import {
   deleteProductImageByUrl,
   saveProductImageFile,
-  isStoredProductImage,
+  isManagedProductImage,
 } from "@/lib/product-image";
 
 function requireAdmin(session: Awaited<ReturnType<typeof getSession>>) {
@@ -99,7 +99,7 @@ export async function PATCH(
     const imageFile = image instanceof File && image.size > 0 ? image : null;
     if (imageFile) {
       try {
-        if (isStoredProductImage(existing.imageUrl)) {
+        if (isManagedProductImage(existing.imageUrl)) {
           await deleteProductImageByUrl(existing.imageUrl);
         }
         data.imageUrl = await saveProductImageFile(id, imageFile);
@@ -204,7 +204,7 @@ export async function DELETE(
 
   try {
     await prisma.product.delete({ where: { id } });
-    if (isStoredProductImage(existing.imageUrl)) {
+    if (isManagedProductImage(existing.imageUrl)) {
       await deleteProductImageByUrl(existing.imageUrl);
     }
   } catch (e) {
