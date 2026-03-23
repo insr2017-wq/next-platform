@@ -82,7 +82,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const role = user.role === "admin" ? "admin" : "user";
+    const role = String(user.role).toLowerCase() === "admin" ? "admin" : "user";
     authRouteLog(ROUTE, "createToken + cookie", { role });
     const token = await createToken({
       userId: user.id,

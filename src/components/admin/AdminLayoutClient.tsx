@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import { AdminHeader } from "./AdminHeader";
-import { SessionGate } from "@/components/auth/SessionGate";
 
 const TITLE_MAP: Record<string, string> = {
   "/admin": "Admin",
@@ -31,7 +30,6 @@ export function AdminLayoutClient({ children, notificationCount = 0 }: AdminLayo
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--app-bg)" }}>
-      <SessionGate />
       <AdminHeader title={title} notificationCount={notificationCount} />
       <main
         style={{

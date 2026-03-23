@@ -119,10 +119,16 @@ function LoginForm() {
         setError(data.error ?? "Erro ao entrar.");
         return;
       }
-      markSessionActive();
       const to =
         data.redirectTo ??
         (data.role === "admin" ? "/admin/dashboard" : "/home");
+      /** Admin: navegação completa para o cookie da API ser aplicado antes do middleware. */
+      if (data.role === "admin" || to.startsWith("/admin")) {
+        markSessionActive();
+        window.location.assign(to);
+        return;
+      }
+      markSessionActive();
       router.push(to);
     } catch {
       setError("Erro de conexão. Tente novamente.");
