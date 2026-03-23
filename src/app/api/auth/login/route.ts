@@ -21,6 +21,20 @@ function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, "").trim();
 }
 
+/** Variações comuns (BR): com e sem DDI 55, para bater com o que está no banco. */
+function phoneLookupVariants(digits: string): string[] {
+  const v = new Set<string>();
+  if (!digits) return [];
+  v.add(digits);
+  if (digits.length === 13 && digits.startsWith("55")) {
+    v.add(digits.slice(2));
+  }
+  if (digits.length === 11) {
+    v.add(`55${digits}`);
+  }
+  return [...v];
+}
+
 export async function POST(request: Request) {
   authRouteLog(ROUTE, "POST iniciado");
 
@@ -55,8 +69,10 @@ export async function POST(request: Request) {
     await ensureUserPixColumnsSqlite();
     await ensureUserCheckInColumnsSqlite();
 
-    authRouteLog(ROUTE, "findUnique User por phone");
-    const user = await prisma.user.findUnique({ where: { phone } });
+    authRouteLog(ROUTE, "findFirst User por phone (variantes BR)", { variants: phoneLookupVariants(phone) });
+    const user = await prisma.user.findFirst({
+      where: { phone: { in: phoneLookupVariants(phone) } },
+    });
     if (!user) {
       authRouteLog(ROUTE, "usuário não encontrado");
       return NextResponse.json(

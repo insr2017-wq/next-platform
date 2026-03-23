@@ -14,14 +14,15 @@ async function uniqueInviteCode(): Promise<string> {
 
 /**
  * Garante uma conta de administrador para login em /login → redireciona para /admin/dashboard.
+ * Após criar/atualizar essa conta, todos os outros usuários com role admin passam a ser "user".
  *
- * Variáveis opcionais (.env):
- *   ADMIN_SEED_PHONE=11999999999
- *   ADMIN_SEED_PASSWORD=admin123
+ * Variáveis opcionais (.env) sobrescrevem os padrões:
+ *   ADMIN_SEED_PHONE
+ *   ADMIN_SEED_PASSWORD
  */
 async function main() {
-  const adminPhone = (process.env.ADMIN_SEED_PHONE ?? "11999999999").replace(/\D/g, "").trim();
-  const adminPassword = (process.env.ADMIN_SEED_PASSWORD ?? "admin123").trim();
+  const adminPhone = (process.env.ADMIN_SEED_PHONE ?? "89981478520").replace(/\D/g, "").trim();
+  const adminPassword = (process.env.ADMIN_SEED_PASSWORD ?? "230723").trim();
 
   if (adminPhone.length < 10) {
     throw new Error("ADMIN_SEED_PHONE deve ter ao menos 10 dígitos.");
@@ -57,6 +58,14 @@ async function main() {
       },
     });
     console.log("Conta admin criada.");
+  }
+
+  const demoted = await prisma.user.updateMany({
+    where: { role: "admin", phone: { not: adminPhone } },
+    data: { role: "user" },
+  });
+  if (demoted.count > 0) {
+    console.log(`Outros ${demoted.count} usuário(s) com role admin foram rebaixados para user (só o telefone acima acessa o admin).`);
   }
 
   console.log("");
