@@ -130,7 +130,7 @@ export async function postVizzionPayTransfer(body: VizzionPayTransferRequestBody
   json: unknown | null;
   text: string;
 }> {
-  const cfg = getVizzionPayConfig();
+  const cfg = await getVizzionPayConfig();
   if (!cfg) {
     throw new Error("VIZZIONPAY_NOT_CONFIGURED");
   }

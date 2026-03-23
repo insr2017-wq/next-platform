@@ -176,7 +176,7 @@ export async function createVizzionPayPixDeposit(
   userId: string,
   amountInput: number
 ): Promise<CreateVizzionPayDepositResult> {
-  if (!getVizzionPayConfig()) {
+  if (!(await getVizzionPayConfig())) {
     throw new Error("VIZZIONPAY_NOT_CONFIGURED");
   }
   const catalogProductId = getVizzionPayDepositProductId();

@@ -55,7 +55,7 @@ export async function POST(
     );
   }
 
-  const cfg = getVizzionPayConfig();
+  const cfg = await getVizzionPayConfig();
   const skipApi = shouldSkipVizzionPayWithdrawTransfer();
 
   if (!cfg) {
@@ -63,7 +63,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Gateway de pagamento não configurado para saques automáticos. Configure VIZZIONPAY_PUBLIC_KEY e VIZZIONPAY_SECRET_KEY, ou use VIZZIONPAY_SKIP_WITHDRAW=true apenas em desenvolvimento.",
+            "Gateway de pagamento não configurado para saques automáticos. Configure as chaves do VizzionPay no painel admin (ou via VIZZIONPAY_PUBLIC_KEY/VIZZIONPAY_SECRET_KEY), ou use VIZZIONPAY_SKIP_WITHDRAW=true apenas em desenvolvimento.",
         },
         { status: 503 }
       );

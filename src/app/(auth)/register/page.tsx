@@ -119,6 +119,18 @@ export default function RegisterPage() {
       setError("As senhas não coincidem.");
       return;
     }
+
+    // Garantia extra: se o usuário clicou rapidamente antes do `useEffect`
+    // popular `inviteCode`, tenta ler `?invite=` na hora.
+    let effectiveInviteCode = inviteCode.trim();
+    if (!effectiveInviteCode && typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const initial = params.get("invite");
+      effectiveInviteCode = (initial ?? "").trim();
+    }
+    // Compatibilidade futura: se códigos alfanuméricos forem usados em produção.
+    if (effectiveInviteCode) effectiveInviteCode = effectiveInviteCode.toUpperCase();
+
     setLoading(true);
     try {
       const res = await fetch("/api/auth/register", {
@@ -128,7 +140,7 @@ export default function RegisterPage() {
           phone: phone.trim(),
           password,
           confirmPassword,
-          inviteCode: inviteCode.trim() || undefined,
+          inviteCode: effectiveInviteCode || undefined,
         }),
       });
       const data = await res.json();

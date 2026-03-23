@@ -42,6 +42,8 @@ export async function GET() {
       welcomeModalLink: s.welcomeModalLink,
       earningsTestMode: s.earningsTestMode,
       earningsTestIntervalMinutes: s.earningsTestIntervalMinutes,
+      vizzionpayPublicKey: s.vizzionpayPublicKey,
+      vizzionpaySecretConfigured: Boolean(s.vizzionpaySecretKey?.trim()),
       updatedAt: s.updatedAt.toISOString(),
     });
   } catch (e) {
@@ -104,6 +106,11 @@ export async function PUT(request: Request) {
         )
       : 10;
 
+  const vizzionpayPublicKeyCandidate =
+    typeof b.vizzionpayPublicKey === "string" ? b.vizzionpayPublicKey.trim() : "";
+  const vizzionpaySecretKeyCandidate =
+    typeof b.vizzionpaySecretKey === "string" ? b.vizzionpaySecretKey.trim() : "";
+
   if (minDeposit === null) {
     return NextResponse.json({ error: "Mínimo de depósito inválido." }, { status: 400 });
   }
@@ -118,7 +125,17 @@ export async function PUT(request: Request) {
   }
 
   try {
-    await getPlatformSettings();
+    const current = await getPlatformSettings();
+
+    const vizzionpayPublicKey =
+      vizzionpayPublicKeyCandidate.length > 0
+        ? vizzionpayPublicKeyCandidate
+        : current.vizzionpayPublicKey;
+    const vizzionpaySecretKey =
+      vizzionpaySecretKeyCandidate.length > 0
+        ? vizzionpaySecretKeyCandidate
+        : current.vizzionpaySecretKey;
+
     await prisma.platformSettings.upsert({
       where: { id: GLOBAL_ID },
       create: {
@@ -135,6 +152,8 @@ export async function PUT(request: Request) {
         welcomeModalLink,
         earningsTestMode,
         earningsTestIntervalMinutes,
+        vizzionpayPublicKey,
+        vizzionpaySecretKey,
       },
       update: {
         minDeposit,
@@ -149,6 +168,8 @@ export async function PUT(request: Request) {
         welcomeModalLink,
         earningsTestMode,
         earningsTestIntervalMinutes,
+        vizzionpayPublicKey,
+        vizzionpaySecretKey,
       },
     });
   } catch (e) {

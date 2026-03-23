@@ -169,7 +169,7 @@ export class VizzionPayPixApiError extends Error {
 export async function postVizzionPayPixReceive(
   body: VizzionPayPixReceiveRequest
 ): Promise<{ ok: true; json: unknown } | { ok: false; status: number; text: string }> {
-  const cfg = getVizzionPayConfig();
+  const cfg = await getVizzionPayConfig();
   if (!cfg) {
     throw new Error("VIZZIONPAY_NOT_CONFIGURED");
   }

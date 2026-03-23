@@ -1,3 +1,5 @@
+import { getPlatformSettings } from "@/lib/platform-settings";
+
 export type VizzionPayConfig = {
   publicKey: string;
   secretKey: string;
@@ -24,11 +26,21 @@ export function getVizzionPayReceiveUrl(): string {
 /**
  * Credenciais do gateway (somente servidor). Nunca expor no cliente.
  */
-export function getVizzionPayConfig(): VizzionPayConfig | null {
-  const publicKey = process.env.VIZZIONPAY_PUBLIC_KEY?.trim();
-  const secretKey = process.env.VIZZIONPAY_SECRET_KEY?.trim();
-  if (!publicKey || !secretKey) return null;
-  return { publicKey, secretKey };
+
+export async function getVizzionPayConfig(): Promise<VizzionPayConfig | null> {
+  try {
+    const s = await getPlatformSettings();
+    const publicKeyDb = s.vizzionpayPublicKey?.trim() ?? "";
+    const secretKeyDb = s.vizzionpaySecretKey?.trim() ?? "";
+    if (publicKeyDb && secretKeyDb) return { publicKey: publicKeyDb, secretKey: secretKeyDb };
+  } catch {
+    // Se migrações não rodaram ainda, ou DB falhou, segue para fallback de env.
+  }
+
+  const publicKeyEnv = process.env.VIZZIONPAY_PUBLIC_KEY?.trim() ?? "";
+  const secretKeyEnv = process.env.VIZZIONPAY_SECRET_KEY?.trim() ?? "";
+  if (!publicKeyEnv || !secretKeyEnv) return null;
+  return { publicKey: publicKeyEnv, secretKey: secretKeyEnv };
 }
 
 /**

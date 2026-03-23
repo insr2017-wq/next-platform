@@ -16,6 +16,7 @@ type Initial = {
   welcomeModalLink: string;
   earningsTestMode: boolean;
   earningsTestIntervalMinutes: number;
+  vizzionpayPublicKey: string;
   updatedAt: string;
 };
 
@@ -67,6 +68,12 @@ export function AdminPlatformSettingsForm({ initial }: Props) {
         ? initial?.earningsTestIntervalMinutes
         : 10,
     );
+
+  const [vizzionpayPublicKey, setVizzionpayPublicKey] = useState<string>(
+    typeof initial?.vizzionpayPublicKey === "string" ? initial?.vizzionpayPublicKey : "",
+  );
+  const [vizzionpaySecretKey, setVizzionpaySecretKey] = useState<string>("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -96,6 +103,9 @@ export function AdminPlatformSettingsForm({ initial }: Props) {
             welcomeModalLink,
           earningsTestMode,
           earningsTestIntervalMinutes,
+          vizzionpayPublicKey: vizzionpayPublicKey.trim(),
+          // Secret nunca é retornada pelo GET; se o campo ficar vazio, a API mantém a secret atual.
+          vizzionpaySecretKey: vizzionpaySecretKey.trim(),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -129,7 +139,12 @@ export function AdminPlatformSettingsForm({ initial }: Props) {
           setEarningsTestIntervalMinutes(Number.isFinite(n) ? n : 10);
         }
         if (fresh.updatedAt) setLastUpdated(fresh.updatedAt);
+        if (typeof fresh.vizzionpayPublicKey === "string") {
+          setVizzionpayPublicKey(fresh.vizzionpayPublicKey);
+        }
       }
+      // Secret não é retornada; limpa o campo após salvar.
+      setVizzionpaySecretKey("");
       router.refresh();
     } catch {
       setError("Erro de conexão.");
@@ -415,6 +430,59 @@ export function AdminPlatformSettingsForm({ initial }: Props) {
             gap: 10,
           }}
         >
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 900,
+              color: "rgba(109,40,217,1)",
+              textTransform: "uppercase",
+              letterSpacing: "0.04em",
+            }}
+          >
+            Credenciais do gateway (VizzionPay)
+          </div>
+
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>
+              Key public
+            </span>
+            <input
+              value={vizzionpayPublicKey}
+              onChange={(e) => setVizzionpayPublicKey(e.target.value)}
+              inputMode="text"
+              placeholder="Cole a VizzionPay Public Key"
+              style={{
+                padding: "12px 14px",
+                borderRadius: 10,
+                border: "1px solid var(--border)",
+                fontSize: 14,
+              }}
+            />
+          </label>
+
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>
+              Key secret
+            </span>
+            <input
+              value={vizzionpaySecretKey}
+              onChange={(e) => setVizzionpaySecretKey(e.target.value)}
+              type="password"
+              inputMode="text"
+              placeholder="Digite a nova Secret Key (deixe vazio para manter)"
+              style={{
+                padding: "12px 14px",
+                borderRadius: 10,
+                border: "1px solid var(--border)",
+                fontSize: 14,
+              }}
+            />
+          </label>
+
+          <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 700, lineHeight: 1.4 }}>
+            A secret key não é exibida no painel. Para trocar a conta, preencha “Key secret” com a nova chave.
+          </div>
+
           <div
             style={{
               fontSize: 12,

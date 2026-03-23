@@ -188,6 +188,10 @@ model PlatformSettings {
   earningsTestMode Boolean @default(false)
   /// Intervalo em minutos quando `earningsTestMode = true`.
   earningsTestIntervalMinutes Int @default(10)
+  /// Credenciais do gateway VizzionPay (usadas em servidor).
+  /// Observação: este projeto não criptografa em repouso; trate com cuidado.
+  vizzionpayPublicKey String @default("")
+  vizzionpaySecretKey String @default("")
   updatedAt        DateTime @updatedAt
 }
 

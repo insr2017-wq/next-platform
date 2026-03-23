@@ -12,7 +12,7 @@ export async function fetchVizzionPayPixStatusByDeposit(params: {
   depositId: string;
   gatewayTransactionId: string | null;
 }): Promise<{ json: unknown; httpStatus: number; url: string } | null> {
-  const cfg = getVizzionPayConfig();
+  const cfg = await getVizzionPayConfig();
   if (!cfg) return null;
 
   const headers: Record<string, string> = {

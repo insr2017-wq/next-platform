@@ -24,6 +24,8 @@ export default async function AdminSettingsPage() {
       welcomeModalLink: "",
       earningsTestMode: false,
       earningsTestIntervalMinutes: 10,
+      vizzionpayPublicKey: "",
+      vizzionpaySecretKey: "",
       updatedAt: new Date(),
     };
   }
@@ -44,6 +46,8 @@ export default async function AdminSettingsPage() {
         earningsTestMode: Boolean(s.earningsTestMode),
         earningsTestIntervalMinutes:
           Number(s.earningsTestIntervalMinutes) || 10,
+        vizzionpayPublicKey:
+          typeof (s as any).vizzionpayPublicKey === "string" ? (s as any).vizzionpayPublicKey : "",
         updatedAt: safeIso(s.updatedAt),
       }}
     />

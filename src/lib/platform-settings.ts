@@ -24,6 +24,8 @@ export type PlatformSettingsData = {
   welcomeModalLink: string;
   earningsTestMode: boolean;
   earningsTestIntervalMinutes: number;
+  vizzionpayPublicKey: string;
+  vizzionpaySecretKey: string;
 };
 
 const DEFAULTS: PlatformSettingsData & { updatedAt: Date } = {
@@ -39,6 +41,8 @@ const DEFAULTS: PlatformSettingsData & { updatedAt: Date } = {
   welcomeModalLink: "",
   earningsTestMode: false,
   earningsTestIntervalMinutes: 10,
+  vizzionpayPublicKey: "",
+  vizzionpaySecretKey: "",
   updatedAt: new Date(),
 };
 
@@ -56,6 +60,8 @@ function normalizeRow(
     welcomeModalLink?: unknown;
     earningsTestMode?: unknown;
     earningsTestIntervalMinutes?: unknown;
+    vizzionpayPublicKey?: unknown;
+    vizzionpaySecretKey?: unknown;
     updatedAt?: Date | null;
   } | null
 ): PlatformSettingsData & { updatedAt: Date } {
@@ -77,6 +83,12 @@ function normalizeRow(
     const bounded = Math.max(1, Math.min(60, x));
     return bounded;
   };
+
+  const trimmedString = (v: unknown, fallback: string) => {
+    if (typeof v !== "string") return fallback;
+    return v.trim();
+  };
+
   return {
     minDeposit: n(row.minDeposit, DEFAULTS.minDeposit),
     minWithdrawal: n(row.minWithdrawal, DEFAULTS.minWithdrawal),
@@ -96,6 +108,8 @@ function normalizeRow(
       row.earningsTestIntervalMinutes,
       DEFAULTS.earningsTestIntervalMinutes,
     ),
+    vizzionpayPublicKey: trimmedString(row.vizzionpayPublicKey, DEFAULTS.vizzionpayPublicKey),
+    vizzionpaySecretKey: trimmedString(row.vizzionpaySecretKey, DEFAULTS.vizzionpaySecretKey),
     updatedAt: u,
   };
 }
@@ -126,6 +140,8 @@ export async function getPlatformSettings(): Promise<
             welcomeModalTitle: DEFAULTS.welcomeModalTitle,
             welcomeModalText: DEFAULTS.welcomeModalText,
             welcomeModalLink: DEFAULTS.welcomeModalLink,
+            vizzionpayPublicKey: DEFAULTS.vizzionpayPublicKey,
+            vizzionpaySecretKey: DEFAULTS.vizzionpaySecretKey,
           },
         });
       } catch (e) {
