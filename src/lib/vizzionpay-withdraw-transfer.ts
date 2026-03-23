@@ -86,34 +86,122 @@ export type WithdrawalTransferOutcome =
  * - PENDING, PROCESSING, TRANSFERRING → processing (aguardando confirmação / webhook)
  * - CANCELED, FAILED, REJECTED etc. → failed (devolução de saldo deve ser feita pelo chamador)
  */
+/** Normaliza para comparação (remove acentos, maiúsculas). */
+function normalizeProviderStatus(raw: string): string {
+  return raw
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toUpperCase()
+    .trim();
+}
+
+/**
+ * Mapeamento VizzionPay → estados internos.
+ * Inclui sinônimos comuns de gateways BR e variações da API.
+ */
 export function mapVizzionPayWithdrawStatusToInternal(
   provider: string | null
 ): "processing" | "processed" | "failed" {
-  const s = (provider ?? "").toUpperCase().trim();
+  const s = normalizeProviderStatus(provider ?? "");
   if (!s) return "processing";
+
+  const processed = new Set<string>([
+    "COMPLETED",
+    "COMPLETE",
+    "SUCCESS",
+    "SUCCEEDED",
+    "SUCCESSFUL",
+    "PAID",
+    "DONE",
+    "OK",
+    "LIQUIDATED",
+    "LIQUIDADO",
+    "SETTLED",
+    "CONFIRMED",
+    "CONFIRMADO",
+    "APPROVED",
+    "APROVADO",
+    "FINISHED",
+    "FINALIZED",
+    "FINALIZADO",
+    "EXECUTED",
+    "TRANSFERRED",
+    "CONCLUIDO",
+    "CONCLUDED",
+    "EFETUADO",
+    "CREDITED",
+    "CREDITADO",
+    "PIX_SENT",
+    "PIXSENT",
+    "PIX_COMPLETED",
+    "PIXCOMPLETED",
+    "PAGO",
+    "PAGA",
+    "PAGAMENTO_REALIZADO",
+    "REALIZADO",
+    "DISPONIVEL",
+    "AVAILABLE",
+  ]);
+
+  const failed = new Set<string>([
+    "CANCELED",
+    "CANCELLED",
+    "CANCELADO",
+    "FAILED",
+    "REJECTED",
+    "RECUSADO",
+    "ERROR",
+    "DENIED",
+    "NEGADO",
+    "REFUSED",
+    "REFUNDED",
+    "ESTORNADO",
+    "INVALID",
+    "EXPIRED",
+    "EXPIRADO",
+  ]);
+
+  const stillProcessing = new Set<string>([
+    "PENDING",
+    "PROCESSING",
+    "TRANSFERRING",
+    "WAITING",
+    "AGUARDANDO",
+    "EM_ANALISE",
+    "EM ANALISE",
+    "ANALISE",
+    "QUEUED",
+    "FILA",
+    "SCHEDULED",
+    "AGENDADO",
+  ]);
+
+  if (processed.has(s)) return "processed";
+  if (failed.has(s)) return "failed";
+  if (stillProcessing.has(s)) return "processing";
+
+  // Palavras-chave parciais (algumas APIs enviam frases)
   if (
-    s === "COMPLETED" ||
-    s === "COMPLETE" ||
-    s === "SUCCESS" ||
-    s === "SUCCEEDED" ||
-    s === "PAID" ||
-    s === "DONE"
+    s.includes("COMPLET") ||
+    s.includes("CONCLU") ||
+    s.includes("LIQUID") ||
+    s.includes("APROV") ||
+    s.includes("CONFIRM") ||
+    s.includes("SUCESS") ||
+    s.includes("PAGO") ||
+    s.includes("PAID")
   ) {
-    return "processed";
+    if (!s.includes("NAO ") && !s.includes("NÃO ") && !s.includes("PEND")) {
+      return "processed";
+    }
   }
-  if (
-    s === "CANCELED" ||
-    s === "CANCELLED" ||
-    s === "FAILED" ||
-    s === "REJECTED" ||
-    s === "ERROR" ||
-    s === "DENIED"
-  ) {
+  if (s.includes("FALH") || s.includes("NEGAD") || s.includes("RECUS") || s.includes("CANCEL")) {
     return "failed";
   }
-  if (s === "PENDING" || s === "PROCESSING" || s === "TRANSFERRING" || s === "WAITING") {
+  if (s.includes("PEND") || s.includes("AGUARD") || s.includes("PROCESS") || s.includes("TRANSFERIND")) {
     return "processing";
   }
+
   return "processing";
 }
 
@@ -224,6 +312,21 @@ export async function executeVizzionPayWithdrawalTransfer(
   }
 
   if (internal === "processed") {
+    return {
+      kind: "processed",
+      gatewayTransactionId: gatewayId,
+      gatewayStatus: parsed.status,
+      receiptUrl: parsed.receiptUrl,
+      webhookToken: parsed.webhookToken,
+    };
+  }
+
+  /** Comprovante sem erro: tratar como concluído mesmo se o status vier genérico. */
+  if (internal === "processing" && parsed.receiptUrl?.trim() && !parsed.rejectedReason?.trim()) {
+    logVizzionPayWithdrawEvent("withdraw_transfer_receipt_implies_processed", {
+      identifier: w.id,
+      withdrawStatus: parsed.status,
+    });
     return {
       kind: "processed",
       gatewayTransactionId: gatewayId,

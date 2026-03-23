@@ -426,6 +426,25 @@ export function WithdrawClient({
   return (
     <Page title="Saque" backHref="/home" headerTone="brand">
       <div style={{ display: "grid", gap: 12 }}>
+        {!canWithdraw && blockedMessage ? (
+          <Card>
+            <div
+              style={{
+                padding: 12,
+                fontSize: 13,
+                fontWeight: 800,
+                color: "#92400e",
+                background: "#fffbeb",
+                borderRadius: 12,
+                border: "1px solid #fde68a",
+                lineHeight: 1.45,
+              }}
+            >
+              {blockedMessage}
+            </div>
+          </Card>
+        ) : null}
+
         <Card>
           <div style={{ padding: 12, display: "grid", gap: 5 }}>
             <FieldLabel>Saldo disponível</FieldLabel>
@@ -602,14 +621,14 @@ export function WithdrawClient({
           <Button
             type="button"
             fullWidth
-            disabled={submitting}
+            disabled={submitting || !canWithdraw}
             style={{
               borderRadius: 999,
               padding: "15px 16px",
               fontSize: 15,
               fontWeight: 900,
               boxShadow: "0 10px 20px var(--brand-shadow)",
-              opacity: submitting ? 0.7 : 1,
+              opacity: submitting || !canWithdraw ? 0.7 : 1,
             }}
             onClick={handleRequestWithdrawal}
           >
@@ -655,10 +674,6 @@ export function WithdrawClient({
             >
               {success}
             </div>
-          ) : null}
-
-          {hasSavedPixKey && !canWithdraw && !error ? (
-            <div style={{ fontWeight: 800, color: "rgba(185,28,28,1)" }}>{blockedMessage}</div>
           ) : null}
 
           {hasSavedPixKey ? (

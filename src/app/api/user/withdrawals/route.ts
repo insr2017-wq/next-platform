@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { formatWithdrawalExternalReferenceForRequesterIp, getClientIpFromHeaders } from "@/lib/client-ip";
 import { prisma } from "@/lib/db";
 import { getPlatformSettings } from "@/lib/platform-settings";
+import { userHasActiveProduct } from "@/lib/user-withdraw-eligibility";
 
 function parseAmount(v: unknown): number | null {
   if (typeof v === "number" && Number.isFinite(v) && v > 0) return v;
@@ -81,6 +82,17 @@ export async function POST(request: Request) {
 
   if (!user) return NextResponse.json({ error: "Conta inválida." }, { status: 403 });
   if (user.banned) return NextResponse.json({ error: "Conta suspensa." }, { status: 403 });
+
+  const hasActiveProduct = await userHasActiveProduct(session.userId);
+  if (!hasActiveProduct) {
+    return NextResponse.json(
+      {
+        error:
+          "É necessário ter pelo menos um produto ativo (investimento em andamento) na conta para solicitar saque. Adquira um produto antes de sacar.",
+      },
+      { status: 403 }
+    );
+  }
 
   const hasPaidDeposit = paidDepositCount > 0;
   const canWithdraw = Boolean(user.sponsoredUser) || hasPaidDeposit;

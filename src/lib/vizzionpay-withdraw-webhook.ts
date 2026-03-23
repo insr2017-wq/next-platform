@@ -79,7 +79,19 @@ export async function processVizzionPayWithdrawWebhook(json: unknown): Promise<v
     rejectedReason: parsed.rejectedReason,
     receiptUrlPresent: Boolean(parsed.receiptUrl),
   });
-  const internal = mapVizzionPayWithdrawStatusToInternal(parsed.status);
+  let internal = mapVizzionPayWithdrawStatusToInternal(parsed.status);
+  /** Comprovante sem motivo de recusa costuma indicar Pix já enviado / pago. */
+  if (
+    internal === "processing" &&
+    Boolean(parsed.receiptUrl?.trim()) &&
+    !parsed.rejectedReason?.trim()
+  ) {
+    internal = "processed";
+    logVizzionPayWithdrawEvent("withdraw_webhook_receipt_implies_processed", {
+      withdrawalId: row.id,
+      providerStatus: parsed.status,
+    });
+  }
 
   const w = await prisma.withdrawal.findUnique({
     where: { id: row.id },

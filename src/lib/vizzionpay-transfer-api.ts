@@ -70,7 +70,27 @@ export function parseVizzionPayTransferResponse(json: unknown): VizzionPayTransf
     pickString(node ?? {}, ["id", "withdrawId", "withdraw_id"]) ??
     pickString(isRecord(node) && isRecord(node.data) ? node.data : {}, ["id"]);
 
-  const status = pickString(node ?? {}, ["status", "state"]) ?? pickString(root ?? {}, ["status"]);
+  const status =
+    pickString(node ?? {}, [
+      "status",
+      "state",
+      "paymentStatus",
+      "payment_status",
+      "transferStatus",
+      "transfer_status",
+      "transactionStatus",
+      "transaction_status",
+      "situation",
+    ]) ??
+    pickString(root ?? {}, ["status", "state"]) ??
+    (isRecord(root) && isRecord(root.data)
+      ? pickString(root.data as Record<string, unknown>, [
+          "status",
+          "state",
+          "paymentStatus",
+          "payment_status",
+        ])
+      : null);
 
   const receiptUrl =
     pickString(node ?? {}, ["receiptUrl", "receipt_url", "url"]) ??

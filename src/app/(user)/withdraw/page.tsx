@@ -10,7 +10,7 @@ export default async function WithdrawPage() {
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const [user, paidDepositsCount, settings] = await Promise.all([
+  const [user, paidDepositsCount, activeProductCount, settings] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.userId },
       select: {
@@ -25,15 +25,23 @@ export default async function WithdrawPage() {
     prisma.deposit.count({
       where: { userId: session.userId, status: "paid" },
     }),
+    prisma.userProduct.count({
+      where: { userId: session.userId, earningStatus: "active" },
+    }),
     getPlatformSettings(),
   ]);
 
   const initialBalance = Number(user?.balance ?? 0);
   const hasPaidDeposit = paidDepositsCount > 0;
-  const canWithdraw = Boolean(user?.sponsoredUser) || hasPaidDeposit;
+  const hasActiveProduct = activeProductCount > 0;
+  const hasDepositRule = Boolean(user?.sponsoredUser) || hasPaidDeposit;
+  const canWithdraw = hasActiveProduct && hasDepositRule;
 
-  const blockedMessage =
-    "Para realizar saques, é necessário ter ao menos um depósito confirmado ou estar liberado pela administração.";
+  const blockedMessage = !hasActiveProduct
+    ? "É necessário ter pelo menos um produto ativo (investimento em andamento) para solicitar saque. Compre um produto em Comprar ou veja Meus produtos."
+    : hasDepositRule
+      ? ""
+      : "Para realizar saques, é necessário ter ao menos um depósito confirmado ou estar liberado pela administração.";
 
   const withdrawalFeePercentRaw = Number(settings.withdrawalFeePercent ?? 0);
   const withdrawalFeePercent = Number.isFinite(withdrawalFeePercentRaw)
