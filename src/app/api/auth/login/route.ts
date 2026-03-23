@@ -15,7 +15,6 @@ import {
 import { logPrismaOrServerError } from "@/lib/prisma-error-log";
 import { authRouteLog, summarizeLoginBody } from "@/lib/auth-route-log";
 import { normalizePhone, phoneLookupVariants } from "@/lib/phone-auth";
-import { ADMIN_LOGIN_PATH } from "@/lib/routes";
 
 const ROUTE = "api/auth/login";
 
@@ -65,16 +64,6 @@ export async function POST(request: Request) {
       );
     }
 
-    if (user.role === "admin") {
-      authRouteLog(ROUTE, "admin deve usar rota exclusiva");
-      return NextResponse.json(
-        {
-          error: `Conta de administrador: use ${ADMIN_LOGIN_PATH} para entrar.`,
-        },
-        { status: 403 }
-      );
-    }
-
     if (user.banned) {
       authRouteLog(ROUTE, "usuário suspenso", { userId: user.id });
       return NextResponse.json(
@@ -93,7 +82,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const role = "user" as const;
+    const role = user.role === "admin" ? "admin" : "user";
     authRouteLog(ROUTE, "createToken + cookie", { role });
     const token = await createToken({
       userId: user.id,
@@ -104,7 +93,7 @@ export async function POST(request: Request) {
     const response = NextResponse.json({
       success: true,
       role,
-      redirectTo: "/home",
+      redirectTo: role === "admin" ? "/admin/dashboard" : "/home",
     });
     response.cookies.set(SESSION_COOKIE_NAME, token, SESSION_COOKIE_OPTIONS);
     authRouteLog(ROUTE, "login ok");

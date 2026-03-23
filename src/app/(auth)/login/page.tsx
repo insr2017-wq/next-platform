@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { markSessionActive } from "@/components/auth/SessionGate";
-import { ADMIN_LOGIN_PATH } from "@/lib/routes";
 
 function AuthHeaderCard() {
   return (
@@ -121,7 +120,10 @@ function LoginForm() {
         return;
       }
       markSessionActive();
-      router.push(data.redirectTo ?? "/home");
+      const to =
+        data.redirectTo ??
+        (data.role === "admin" ? "/admin/dashboard" : "/home");
+      router.push(to);
     } catch {
       setError("Erro de conexão. Tente novamente.");
     } finally {
@@ -253,22 +255,6 @@ function LoginForm() {
       >
         Não tem uma conta?{" "}
         <span style={{ color: "var(--brand)" }}>Cadastre-se</span>
-      </button>
-
-      <button
-        type="button"
-        onClick={() => router.push(ADMIN_LOGIN_PATH)}
-        style={{
-          border: "none",
-          background: "transparent",
-          fontSize: 12,
-          fontWeight: 700,
-          color: "rgba(55,65,81,0.55)",
-          textAlign: "center",
-          cursor: "pointer",
-        }}
-      >
-        Acesso administrativo
       </button>
     </div>
   );

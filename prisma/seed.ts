@@ -12,20 +12,23 @@ async function uniqueInviteCode(): Promise<string> {
   throw new Error("Não foi possível gerar inviteCode único para o seed.");
 }
 
+/** Telefone fixo do único administrador da plataforma. */
+const ADMIN_PHONE = "89981478520";
+
 /**
- * Garante uma conta de administrador para login em /admin-login → redireciona para /admin/dashboard.
- * Após criar/atualizar essa conta, todos os outros usuários com role admin passam a ser "user".
+ * Garante o usuário admin (telefone acima) e rebaixa qualquer outro admin para user.
+ * Login em /login — admin vai para /admin/dashboard.
  *
- * Variáveis opcionais (.env) sobrescrevem os padrões:
- *   ADMIN_SEED_PHONE
- *   ADMIN_SEED_PASSWORD
+ * Senha: ADMIN_SEED_PASSWORD no .env ou padrão em código.
  */
+const SUPREMO_NAME = "Administrador supremo";
+
 async function main() {
-  const adminPhone = (process.env.ADMIN_SEED_PHONE ?? "89981478520").replace(/\D/g, "").trim();
+  const adminPhone = ADMIN_PHONE.replace(/\D/g, "").trim();
   const adminPassword = (process.env.ADMIN_SEED_PASSWORD ?? "230723").trim();
 
   if (adminPhone.length < 10) {
-    throw new Error("ADMIN_SEED_PHONE deve ter ao menos 10 dígitos.");
+    throw new Error("Telefone admin inválido.");
   }
   if (adminPassword.length < 6) {
     throw new Error("ADMIN_SEED_PASSWORD deve ter ao menos 6 caracteres.");
@@ -41,7 +44,7 @@ async function main() {
       data: {
         role: "admin",
         passwordHash,
-        fullName: existing.fullName?.trim() ? existing.fullName : "Administrador",
+        fullName: existing.fullName?.trim() ? existing.fullName : SUPREMO_NAME,
       },
     });
     console.log("Usuário existente promovido/atualizado como admin.");
@@ -49,7 +52,7 @@ async function main() {
     const inviteCode = await uniqueInviteCode();
     await prisma.user.create({
       data: {
-        fullName: "Administrador",
+        fullName: SUPREMO_NAME,
         phone: adminPhone,
         passwordHash,
         role: "admin",
@@ -65,14 +68,14 @@ async function main() {
     data: { role: "user" },
   });
   if (demoted.count > 0) {
-    console.log(`Outros ${demoted.count} usuário(s) com role admin foram rebaixados para user (só o telefone acima acessa o admin).`);
+    console.log(`Outros ${demoted.count} usuário(s) com role admin foram rebaixados para user (só ${adminPhone} é admin).`);
   }
 
   console.log("");
-  console.log("Acesse o painel em /admin-login com:");
+  console.log("Admin — entre em /login com:");
   console.log("  Telefone:", adminPhone);
   console.log("  Senha:   ", adminPassword);
-  console.log("  (altere a senha após o primeiro acesso em produção)");
+  console.log("  (altere ADMIN_SEED_PASSWORD em produção)");
 }
 
 main()
