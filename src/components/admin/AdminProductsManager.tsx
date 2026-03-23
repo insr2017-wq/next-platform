@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus, Trash2 } from "lucide-react";
+import { formatDateBr } from "@/lib/datetime-br";
 
 export type ProductRow = {
   id: string;
@@ -350,7 +351,7 @@ export function AdminProductsManager({ initialRows }: Props) {
                       </span>
                     </td>
                     <td style={{ padding: 8, color: "#6b7280" }}>
-                      {new Date(r.createdAt).toLocaleDateString("pt-BR")}
+                      {formatDateBr(r.createdAt)}
                     </td>
                     <td style={{ padding: 8 }}>
                       <div style={{ display: "flex", gap: 4 }}>

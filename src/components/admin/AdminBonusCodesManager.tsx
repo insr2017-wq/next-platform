@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus, Trash2 } from "lucide-react";
+import { formatDateTimeBr } from "@/lib/datetime-br";
 
 export type BonusCodeRow = {
   id: string;
@@ -258,7 +259,7 @@ export function AdminBonusCodesManager({ initialRows }: Props) {
                     {r.redemptionCount}
                   </td>
                   <td style={{ padding: "8px 6px", color: "#6b7280" }}>
-                    {new Date(r.createdAt).toLocaleString("pt-BR")}
+                    {formatDateTimeBr(r.createdAt)}
                   </td>
                   <td style={{ padding: "8px 6px" }}>
                     <div style={{ display: "flex", gap: 4 }}>

@@ -8,6 +8,7 @@ import { Tabs } from "@/components/ui/Tabs";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import type { TeamData } from "@/lib/team-data";
+import { formatDateBr } from "@/lib/datetime-br";
 
 function formatBRL(value: number): string {
   return new Intl.NumberFormat("pt-BR", {
@@ -21,12 +22,7 @@ function formatBRL(value: number): string {
 function formatDate(iso: string): string {
   if (!iso) return "—";
   try {
-    const d = new Date(iso);
-    return d.toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+    return formatDateBr(iso);
   } catch {
     return "—";
   }

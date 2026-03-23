@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { formatDateTimeBr } from "@/lib/datetime-br";
 
 type Initial = {
   minDeposit: number;
@@ -577,7 +578,7 @@ export function AdminPlatformSettingsForm({ initial }: Props) {
           Última atualização:{" "}
           {Number.isNaN(Date.parse(lastUpdated))
             ? "—"
-            : new Date(lastUpdated).toLocaleString("pt-BR")}
+            : formatDateTimeBr(lastUpdated)}
         </p>
       </div>
     </form>

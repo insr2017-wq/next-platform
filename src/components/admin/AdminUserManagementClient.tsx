@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/admin/EmptyState";
+import { formatDateBr, formatDateTimeBr } from "@/lib/datetime-br";
 
 const formatBRL = (n: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
@@ -320,11 +321,7 @@ export function AdminUserManagementClient({ initialData }: Props) {
           </div>
           <div>
             <strong>Data de cadastro:</strong>{" "}
-            {new Date(user.createdAt).toLocaleDateString("pt-BR", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-            })}
+            {formatDateBr(user.createdAt)}
           </div>
         </div>
         <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
@@ -608,13 +605,7 @@ export function AdminUserManagementClient({ initialData }: Props) {
                       {formatBRL(d.amount)}
                     </td>
                     <td style={{ padding: "8px 0", color: "#6b7280" }}>
-                      {new Date(d.createdAt).toLocaleString("pt-BR", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {formatDateTimeBr(d.createdAt)}
                     </td>
                     <td style={{ padding: "8px 0" }}>
                       {depositStatusLabel[d.status] ?? d.status}

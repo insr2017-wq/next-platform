@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { EmptyState } from "@/components/admin/EmptyState";
+import { formatDateBr } from "@/lib/datetime-br";
 
 export default async function AdminDepositsPage() {
   let deposits: Awaited<ReturnType<typeof prisma.deposit.findMany<{ include: { user: { select: { fullName: true; phone: true } } } }>>>;
@@ -60,7 +61,7 @@ export default async function AdminDepositsPage() {
               </td>
               <td style={{ padding: "10px 12px", fontSize: 14 }}>{d.status}</td>
               <td style={{ padding: "10px 12px", fontSize: 13, color: "#6b7280" }}>
-                {d.createdAt.toLocaleDateString("pt-BR")}
+                {formatDateBr(d.createdAt)}
               </td>
             </tr>
           ))}

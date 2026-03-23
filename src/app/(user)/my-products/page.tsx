@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { formatProductForCard } from "@/lib/product-format";
+import { formatDateBr } from "@/lib/datetime-br";
 
 const brl = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -96,7 +97,7 @@ export default async function MyProductsPage() {
               const dy = dailyAmount(row);
               const c = cycleTotal(row);
               const pc = formatProductForCard(row.product);
-              const purchasedAtLabel = row.purchasedAt.toLocaleDateString("pt-BR");
+              const purchasedAtLabel = formatDateBr(row.purchasedAt);
               return (
                 <div key={row.id} style={{ display: "grid", gap: 8 }}>
                   <ProductCard

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Pencil } from "lucide-react";
+import { formatDateBr } from "@/lib/datetime-br";
 
 export type AdminUserRow = {
   id: string;
@@ -89,7 +90,7 @@ export function AdminUsersManager({ users }: AdminUsersManagerProps) {
                 </span>
               </td>
               <td style={{ padding: "10px 8px", fontSize: 12, color: "#6b7280" }}>
-                {new Date(u.createdAt).toLocaleDateString("pt-BR")}
+                {formatDateBr(u.createdAt)}
               </td>
               <td style={{ padding: "10px 8px" }}>
                 <Link

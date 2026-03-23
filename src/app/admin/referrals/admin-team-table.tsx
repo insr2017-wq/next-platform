@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
+import { formatDateTimeBr } from "@/lib/datetime-br";
 
 export type TeamRow = {
   id: string;
@@ -14,13 +15,7 @@ export type TeamRow = {
 
 function formatDate(iso: string) {
   try {
-    return new Date(iso).toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatDateTimeBr(iso);
   } catch {
     return iso;
   }

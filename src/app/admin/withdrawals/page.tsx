@@ -5,6 +5,7 @@ import {
   ensureUserPublicIdColumnAndBackfill,
 } from "@/lib/user-schema-sqlite";
 import { AdminWithdrawalActionsClient } from "@/components/admin/AdminWithdrawalActionsClient";
+import { formatDateBr } from "@/lib/datetime-br";
 
 function normalizePhone(q: string): string {
   return q.replace(/\D/g, "");
@@ -201,7 +202,7 @@ export default async function AdminWithdrawalsPage({
                 })()}
               </td>
               <td style={{ padding: "10px 12px", fontSize: 13, color: "#6b7280" }}>
-                {w.createdAt.toLocaleDateString("pt-BR")}
+                {formatDateBr(w.createdAt)}
               </td>
               <td style={{ padding: "10px 12px", fontSize: 13 }}>
                 {w.status === "pending" ? (
