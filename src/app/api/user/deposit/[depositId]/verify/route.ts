@@ -49,7 +49,6 @@ export async function POST(
   const queried = await fetchVizzionPayPixStatusByDeposit({
     depositId: deposit.id,
     gatewayTransactionId: deposit.gatewayTransactionId,
-    gatewayOrderId: deposit.gatewayOrderId,
   });
 
   if (!queried || !detectVizzionPayPixPaidPayload(queried.json)) {
@@ -66,7 +65,6 @@ export async function POST(
     depositId: deposit.id,
     gatewayProvider: "vizzionpay",
     gatewayTransactionId: deposit.gatewayTransactionId ?? undefined,
-    gatewayOrderId: deposit.gatewayOrderId ?? undefined,
   });
 
   const user = await prisma.user.findUnique({

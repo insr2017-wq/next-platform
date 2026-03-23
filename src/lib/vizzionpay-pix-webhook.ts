@@ -455,24 +455,6 @@ async function resolveDepositFromWebhook(
       value: ref,
     });
 
-    const byOrd = await prisma.deposit.findFirst({
-      where: { gatewayProvider: "vizzionpay", gatewayOrderId: ref },
-      select: { id: true },
-    });
-    if (byOrd) {
-      logVizzionPayPixEvent("webhook_pix_deposit_resolved", {
-        depositId: byOrd.id,
-        resolvedBy: "gatewayOrderId",
-        matchedValue: ref,
-      });
-      return { depositId: byOrd.id, resolvedBy: "gatewayOrderId" };
-    }
-    logVizzionPayPixEvent("webhook_pix_lookup_no_match", {
-      step: "deposit.findFirst",
-      field: "gatewayOrderId",
-      value: ref,
-    });
-
     const byExt = await prisma.deposit.findFirst({
       where: { gatewayProvider: "vizzionpay", externalReference: ref },
       select: { id: true },
@@ -581,21 +563,18 @@ export async function processVizzionPayPixWebhook(json: unknown): Promise<void> 
 
   const gatewayTransactionId =
     canonical.transactionId ?? extractGatewayTransactionIdFallback(normalized) ?? undefined;
-  const gatewayOrderId = canonical.orderId ?? undefined;
 
   try {
     await markDepositPaid({
       depositId: resolved.depositId,
       gatewayProvider: "vizzionpay",
       gatewayTransactionId,
-      gatewayOrderId,
       paidAt: canonical.paidAt ?? new Date(),
     });
     logVizzionPayPixEvent("webhook_pix_deposit_marked_paid", {
       depositId: resolved.depositId,
       resolvedBy: resolved.resolvedBy,
       gatewayTransactionId: gatewayTransactionId ?? null,
-      gatewayOrderId: gatewayOrderId ?? null,
     });
   } catch (e) {
     logVizzionPayPixError("webhook_pix_mark_paid_failed", {

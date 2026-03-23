@@ -57,8 +57,6 @@ model Deposit {
   status    String   // "pending" | "paid" | "failed"
   /// ID retornado pelo gateway (quando existir).
   gatewayTransactionId String?
-  /// ID do pedido no gateway (quando distinto de `gatewayTransactionId`).
-  gatewayOrderId       String?
   /// Identificador do provedor/gateway (ex.: "mercadopago", "stripe", etc.).
   gatewayProvider      String?
   /// Código PIX (quando aplicável).

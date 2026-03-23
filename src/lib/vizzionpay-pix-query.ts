@@ -6,12 +6,11 @@ const BASE = "https://app.vizzionpay.com.br/api/v1/gateway/pix";
 
 /**
  * Consulta status do Pix no gateway (várias URLs comuns; override via `VIZZIONPAY_PIX_QUERY_URL` com
- * `{identifier}`, `{gatewayTransactionId}`, `{gatewayOrderId}`, `{gatewayRef}` — último = tx ou order).
+ * `{identifier}`, `{gatewayTransactionId}`, `{gatewayRef}` (tx ou order salvo em gatewayTransactionId).
  */
 export async function fetchVizzionPayPixStatusByDeposit(params: {
   depositId: string;
   gatewayTransactionId: string | null;
-  gatewayOrderId?: string | null;
 }): Promise<{ json: unknown; httpStatus: number; url: string } | null> {
   const cfg = getVizzionPayConfig();
   if (!cfg) return null;
@@ -23,10 +22,7 @@ export async function fetchVizzionPayPixStatusByDeposit(params: {
   };
 
   const urls: string[] = [];
-  const gatewayRef =
-    params.gatewayTransactionId?.trim() ||
-    (typeof params.gatewayOrderId === "string" ? params.gatewayOrderId.trim() : "") ||
-    null;
+  const gatewayRef = params.gatewayTransactionId?.trim() || null;
 
   const envTpl = process.env.VIZZIONPAY_PIX_QUERY_URL?.trim();
   if (envTpl) {
@@ -34,7 +30,6 @@ export async function fetchVizzionPayPixStatusByDeposit(params: {
       envTpl
         .replace(/\{identifier\}/g, encodeURIComponent(params.depositId))
         .replace(/\{gatewayTransactionId\}/g, encodeURIComponent(params.gatewayTransactionId ?? ""))
-        .replace(/\{gatewayOrderId\}/g, encodeURIComponent(params.gatewayOrderId ?? ""))
         .replace(/\{gatewayRef\}/g, encodeURIComponent(gatewayRef ?? ""))
     );
   }
@@ -82,10 +77,6 @@ export async function fetchVizzionPayPixStatusByDeposit(params: {
   const postBodies: Record<string, unknown>[] = [{ identifier: params.depositId }];
   if (gatewayRef) {
     postBodies.unshift({ identifier: params.depositId, transactionId: gatewayRef });
-  }
-  const ord = typeof params.gatewayOrderId === "string" ? params.gatewayOrderId.trim() : "";
-  if (ord && ord !== gatewayRef) {
-    postBodies.push({ identifier: params.depositId, orderId: ord });
   }
   const postUrls = [`${BASE}/receive/status`, `${BASE}/receive/consult`];
   for (const url of postUrls) {

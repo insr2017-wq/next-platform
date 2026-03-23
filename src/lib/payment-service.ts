@@ -22,7 +22,6 @@ type CreateDepositRequestInput = {
 type MarkDepositPaidInput = {
   depositId: string;
   gatewayTransactionId?: string;
-  gatewayOrderId?: string;
   gatewayProvider?: string;
   paidAt?: Date;
 };
@@ -111,7 +110,6 @@ export async function markDepositPaid(input: MarkDepositPaidInput) {
         paidAt,
         ...(input.gatewayProvider !== undefined ? { gatewayProvider: input.gatewayProvider } : {}),
         ...(input.gatewayTransactionId !== undefined ? { gatewayTransactionId: input.gatewayTransactionId } : {}),
-        ...(input.gatewayOrderId !== undefined ? { gatewayOrderId: input.gatewayOrderId } : {}),
       },
     });
 
