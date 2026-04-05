@@ -83,7 +83,7 @@ export function AdminUsersManager({ users }: AdminUsersManagerProps) {
                 <span
                   style={{
                     fontWeight: 700,
-                    color: u.banned ? "#b91c1c" : "#166534",
+                    color: u.banned ? "#b91c1c" : "var(--brand)",
                   }}
                 >
                   {u.banned ? "Banido" : "Ativo"}

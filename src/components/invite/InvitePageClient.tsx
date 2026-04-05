@@ -99,24 +99,25 @@ export function InvitePageClient({
             }}
           >
             <div
-              aria-hidden="true"
               style={{
                 width: 56,
                 height: 56,
-                borderRadius: 999,
+                borderRadius: 14,
                 border: "2px solid var(--brand)",
                 background: "#fff",
                 display: "grid",
                 placeItems: "center",
                 overflow: "hidden",
+                flexShrink: 0,
               }}
             >
               <img
                 src="/logo-equipe.png"
-                alt=""
+                alt="Trek"
                 style={{
-                  width: 44,
-                  height: 44,
+                  width: "100%",
+                  height: "100%",
+                  padding: 6,
                   objectFit: "contain",
                 }}
               />

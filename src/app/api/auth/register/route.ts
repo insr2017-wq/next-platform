@@ -14,6 +14,35 @@ import { authRouteLog, summarizeRegisterBody } from "@/lib/auth-route-log";
 
 const ROUTE = "api/auth/register";
 
+const REGISTER_RATE_WINDOW_MS = 10 * 60 * 1000;
+const REGISTER_RATE_MAX_ATTEMPTS = 5;
+const registerAttemptsByIp = new Map<string, number[]>();
+
+function getClientIp(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    const first = forwarded.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  const realIp = request.headers.get("x-real-ip");
+  if (realIp?.trim()) return realIp.trim();
+  return "unknown";
+}
+
+/** Retorna true se o IP excedeu o limite (e não registra esta tentativa). */
+function isRegisterRateLimited(ip: string): boolean {
+  const now = Date.now();
+  let timestamps = registerAttemptsByIp.get(ip) ?? [];
+  timestamps = timestamps.filter((t) => now - t < REGISTER_RATE_WINDOW_MS);
+  if (timestamps.length >= REGISTER_RATE_MAX_ATTEMPTS) {
+    registerAttemptsByIp.set(ip, timestamps);
+    return true;
+  }
+  timestamps.push(now);
+  registerAttemptsByIp.set(ip, timestamps);
+  return false;
+}
+
 function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, "").trim();
 }
@@ -33,6 +62,18 @@ export async function POST(request: Request) {
   }
 
   authRouteLog(ROUTE, "payload (sem senha)", summarizeRegisterBody(body));
+
+  const clientIp = getClientIp(request);
+  if (isRegisterRateLimited(clientIp)) {
+    authRouteLog(ROUTE, "rate limit cadastro", { clientIp });
+    return NextResponse.json(
+      {
+        error:
+          "Muitas tentativas de cadastro a partir deste endereço. Tente novamente em alguns minutos.",
+      },
+      { status: 429 }
+    );
+  }
 
   try {
     authRouteLog(ROUTE, "antes: ensureUser* (no-op em Postgres)");
@@ -57,10 +98,10 @@ export async function POST(request: Request) {
     const phone = normalizePhone(rawPhone ?? "");
     authRouteLog(ROUTE, "telefone normalizado", { digitsLen: phone.length });
 
-    if (!phone || phone.length < 10) {
+    if (!phone || phone.length < 10 || phone.length > 11) {
       authRouteLog(ROUTE, "validação falhou: telefone");
       return NextResponse.json(
-        { error: "Número de telefone inválido." },
+        { error: "Número de telefone inválido" },
         { status: 400 }
       );
     }

@@ -10,7 +10,7 @@ export function NotificationBar({ text }: NotificationBarProps) {
       <div
         style={{
           padding: "10px 12px",
-          background: "#ecfdf5",
+          background: "var(--brand-light)",
           display: "flex",
           alignItems: "center",
           gap: 10,

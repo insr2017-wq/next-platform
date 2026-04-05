@@ -24,7 +24,12 @@ export default async function HomePage() {
     <Page
       title="Início"
       hideHeader
-      topBanner={{ src: "/home-banner.png", alt: "Banner", height: 180, fullWidth: true }}
+      topBanner={{
+        src: "/home-banner.png",
+        alt: "Trek — mountain bike e estrada",
+        height: 220,
+        fullWidth: true,
+      }}
     >
       <WelcomeModalClient
         enabled={settings.welcomeModalEnabled}

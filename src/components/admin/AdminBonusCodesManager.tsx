@@ -246,7 +246,7 @@ export function AdminBonusCodesManager({ initialRows }: Props) {
                 <tr key={r.id} style={{ borderBottom: "1px solid var(--border)" }}>
                   <td style={{ padding: "8px 6px", fontWeight: 700 }}>{r.code}</td>
                   <td style={{ padding: "8px 6px" }}>
-                    <span style={{ color: r.isActive ? "#166534" : "#6b7280", fontWeight: 700 }}>
+                    <span style={{ color: r.isActive ? "var(--brand)" : "#6b7280", fontWeight: 700 }}>
                       {r.isActive ? "Ativo" : "Inativo"}
                     </span>
                   </td>

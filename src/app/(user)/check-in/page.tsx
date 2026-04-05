@@ -180,7 +180,7 @@ export default function CheckInPage() {
             style={{
               padding: "10px 12px",
               borderRadius: 10,
-              background: "rgba(236,253,245,0.95)",
+              background: "rgba(var(--brand-rgb), 0.08)",
               border: "1px solid var(--brand-border)",
               color: "rgba(17,24,39,0.9)",
               fontSize: 13,

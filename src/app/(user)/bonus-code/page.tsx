@@ -64,7 +64,7 @@ export default function BonusCodePage() {
               alignItems: "center",
               gap: 14,
               textAlign: "center",
-              background: "rgba(236,253,245,0.5)",
+              background: "rgba(var(--brand-rgb), 0.06)",
               borderRadius: 14,
             }}
           >

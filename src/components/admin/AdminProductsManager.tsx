@@ -346,7 +346,7 @@ export function AdminProductsManager({ initialRows }: Props) {
                     <td style={{ padding: 8, textAlign: "center" }}>{r.cycleDays} d</td>
                     <td style={{ padding: 8, textAlign: "right" }}>{formatBRL(r.totalReturn)}</td>
                     <td style={{ padding: 8 }}>
-                      <span style={{ color: r.isActive ? "#166534" : "#6b7280", fontWeight: 700 }}>
+                      <span style={{ color: r.isActive ? "var(--brand)" : "#6b7280", fontWeight: 700 }}>
                         {r.isActive ? "Ativo" : "Inativo"}
                       </span>
                     </td>

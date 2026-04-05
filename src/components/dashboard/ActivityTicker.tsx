@@ -27,7 +27,7 @@ export function ActivityTicker() {
       <div
         style={{
           padding: 8,
-          background: "rgba(236,253,245,1)",
+          background: "rgba(var(--brand-rgb), 0.08)",
           borderRadius: 999,
         }}
       >

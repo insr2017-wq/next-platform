@@ -2,34 +2,31 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { markSessionActive } from "@/components/auth/SessionGate";
 
 function AuthHeaderCard() {
   return (
-    <Card>
-      <div
+    <div
+      style={{
+        display: "grid",
+        justifyItems: "stretch",
+        marginBottom: 4,
+      }}
+    >
+      <img
+        src="/auth-banner.png"
+        alt="Trek"
         style={{
-          padding: 24,
-          display: "grid",
-          justifyItems: "center",
-          alignItems: "center",
-          background: "var(--surface)",
+          display: "block",
+          width: "100%",
+          maxWidth: 340,
+          height: "auto",
+          margin: "0 auto",
+          objectFit: "contain",
         }}
-      >
-        <img
-          src="/logo.png"
-          alt="Logo"
-          style={{
-            maxWidth: "100%",
-            width: 200,
-            height: "auto",
-            objectFit: "contain",
-          }}
-        />
-      </div>
-    </Card>
+      />
+    </div>
   );
 }
 

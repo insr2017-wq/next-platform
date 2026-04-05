@@ -315,7 +315,7 @@ export function AdminUserManagementClient({ initialData }: Props) {
           </div>
           <div>
             <strong>Status:</strong>{" "}
-            <span style={{ color: user.banned ? "#b91c1c" : "#166534", fontWeight: 700 }}>
+            <span style={{ color: user.banned ? "#b91c1c" : "var(--brand)", fontWeight: 700 }}>
               {user.banned ? "Banido" : "Ativo"}
             </span>
           </div>
@@ -440,7 +440,7 @@ export function AdminUserManagementClient({ initialData }: Props) {
               padding: "10px",
               borderRadius: 10,
               border: "none",
-              background: "#166534",
+              background: "var(--brand)",
               color: "#fff",
               fontWeight: 800,
               cursor: "pointer",
@@ -474,7 +474,7 @@ export function AdminUserManagementClient({ initialData }: Props) {
               marginTop: 10,
               fontSize: 12,
               fontWeight: 700,
-              color: balanceMsg.type === "ok" ? "#166534" : "#b91c1c",
+              color: balanceMsg.type === "ok" ? "var(--brand)" : "#b91c1c",
             }}
           >
             {balanceMsg.text}
@@ -566,7 +566,7 @@ export function AdminUserManagementClient({ initialData }: Props) {
               marginTop: 10,
               fontSize: 12,
               fontWeight: 700,
-              color: assignMsg.type === "ok" ? "#166534" : "#b91c1c",
+              color: assignMsg.type === "ok" ? "var(--brand)" : "#b91c1c",
             }}
           >
             {assignMsg.text}
@@ -670,7 +670,7 @@ export function AdminUserManagementClient({ initialData }: Props) {
               marginBottom: 10,
               fontSize: 13,
               fontWeight: 600,
-              color: pixMsg.type === "ok" ? "#166534" : "#b91c1c",
+              color: pixMsg.type === "ok" ? "var(--brand)" : "#b91c1c",
             }}
           >
             {pixMsg.text}

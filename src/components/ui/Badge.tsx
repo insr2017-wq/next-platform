@@ -10,7 +10,7 @@ export function Badge({ children, tone = "neutral" }: BadgeProps) {
     tone === "warning"
       ? { bg: "#fef3c7", fg: "#92400e", border: "#fde68a" }
       : tone === "success"
-        ? { bg: "#dcfce7", fg: "#166534", border: "#bbf7d0" }
+        ? { bg: "#f4f4f5", fg: "#18181b", border: "#d4d4d8" }
         : { bg: "#f3f4f6", fg: "#374151", border: "#e5e7eb" };
 
   return (
