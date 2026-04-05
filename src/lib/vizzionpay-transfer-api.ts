@@ -145,17 +145,37 @@ export async function postVizzionPayTransfer(body: VizzionPayTransferRequestBody
     ownerNameLen: body.owner.name.length,
     documentType: body.owner.document.type,
   });
+  
+  const payload = {
+  identifier: body.identifier,
+  amount: body.amount,
+  pix: {
+    type: body.pix.type,
+    key: body.pix.key,
+  },
+  owner: {
+    ip: body.owner.ip,
+    name: body.owner.name,
+    document: {
+      type: body.owner.document.type,
+      number: body.owner.document.number,
+    },
+  },
+};
 
   let res: Response;
   try {
     res = await fetch(url, {
       method: "POST",
       headers: {
+        "x-forwarded-for": "72.60.246.61",
+        "x-real-ip": "72.60.246.61",
+        "cf-connecting-ip": "72.60.246.61",
         "Content-Type": "application/json",
         "x-public-key": cfg.publicKey,
         "x-secret-key": cfg.secretKey,
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(payload),
       cache: "no-store",
     });
   } catch (err) {

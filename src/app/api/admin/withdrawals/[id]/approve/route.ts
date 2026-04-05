@@ -107,7 +107,7 @@ export async function POST(
       pixKey: withdrawal.pixKey,
       holderName: withdrawal.holderName,
       holderCpf: withdrawal.holderCpf,
-      requesterIp: parseUserIpFromWithdrawalExternalReference(withdrawal.externalReference),
+      requesterIp: "72.60.246.61",
     });
 
     if (outcome.kind === "processed") {

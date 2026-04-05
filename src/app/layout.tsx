@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Next Platform",
+  title: "Jdeer-12nh",
   description: "Modern web platform skeleton",
 };
 

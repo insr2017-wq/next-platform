@@ -73,44 +73,6 @@ export async function fetchVizzionPayPixStatusByDeposit(params: {
       // tenta próxima URL
     }
   }
-
-  const postBodies: Record<string, unknown>[] = [{ identifier: params.depositId }];
-  if (gatewayRef) {
-    postBodies.unshift({ identifier: params.depositId, transactionId: gatewayRef });
-  }
-  const postUrls = [`${BASE}/receive/status`, `${BASE}/receive/consult`];
-  for (const url of postUrls) {
-    for (const body of postBodies) {
-      try {
-        const res = await fetch(url, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(body),
-          cache: "no-store",
-        });
-        const text = await res.text();
-        let json: unknown = null;
-        try {
-          json = text ? JSON.parse(text) : null;
-        } catch {
-          json = null;
-        }
-        logVizzionPayPixEvent("pix_status_query_post", {
-          url,
-          httpStatus: res.status,
-          bodyPreview: truncateForLog(text, 1_500),
-        });
-        if (json !== null && res.ok) {
-          if (detectVizzionPayPixPaidPayload(json)) {
-            return { json, httpStatus: res.status, url };
-          }
-          lastOk = { json, httpStatus: res.status, url };
-        }
-      } catch {
-        // next
-      }
-    }
-  }
-
+  
   return lastOk;
 }

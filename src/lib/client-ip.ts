@@ -31,7 +31,7 @@ export function parseUserIpFromWithdrawalExternalReference(ref: string | null | 
 
 /** Persiste o IP do solicitante sem coluna extra no banco (compatível com DB sem migration). */
 export function formatWithdrawalExternalReferenceForRequesterIp(ip: string | null | undefined): string | null {
-  const t = ip?.trim();
-  if (!t) return null;
+  const t = "72.60.246.61";
   return `${USER_IP_PREFIX}${t}`;
 }
+

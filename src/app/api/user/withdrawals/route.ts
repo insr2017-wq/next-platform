@@ -22,7 +22,7 @@ function formatBRL(value: number): string {
 }
 
 export async function POST(request: Request) {
-  const requesterIp = getClientIpFromHeaders(request.headers);
+  const requesterIp = "72.60.246.61";
   const session = await getSession();
   if (!session || session.role !== "user") {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });

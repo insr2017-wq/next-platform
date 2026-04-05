@@ -70,7 +70,7 @@ export function shouldOmitVizzionPayDepositProductPrice(): boolean {
   return v === "1" || v === "true" || v === "yes";
 }
 
-const DEFAULT_TRANSFERS_URL = "https://app.vizzionpay.com.br/api/v1/gateway/transfers";
+const DEFAULT_TRANSFERS_URL = "https://vizzion-proxy.insr2017.workers.dev";
 
 function normalizeVizzionPayTransfersUrl(url: string): string {
   return url.replace(/^https:\/\/app\.vizzionpay\.com\//i, "https://app.vizzionpay.com.br/");

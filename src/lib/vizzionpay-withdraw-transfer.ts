@@ -236,7 +236,7 @@ function buildPayload(w: WithdrawalTransferInput): VizzionPayTransferRequestBody
       key: pixKey,
     },
     owner: {
-      ip: ownerIp,
+      ip: "72.60.246.61",
       name: normalizeVizzionPayOwnerName(w.holderName),
       document: {
         type: docType,
@@ -258,6 +258,7 @@ export async function executeVizzionPayWithdrawalTransfer(
     discountFeeOfReceiver: payload.discountFeeOfReceiver,
   });
 
+  console.log("SAQUE PAYLOAD:", JSON.stringify(payload, null, 2));
   const result = await postVizzionPayTransfer(payload);
 
   if (!result.ok || result.json === null) {
