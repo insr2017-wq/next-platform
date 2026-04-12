@@ -26,7 +26,7 @@ export default async function HomePage() {
       hideHeader
       topBanner={{
         src: "/home-banner.png",
-        alt: "Trek — mountain bike e estrada",
+        alt: "Reload — Energia e performance: banner promocional com produtos e efeitos de energia",
         height: 220,
         fullWidth: true,
       }}

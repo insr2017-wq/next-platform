@@ -5,20 +5,20 @@
   --gutter: 16px;
   --header-height: 64px;
   --bottom-nav-height: 72px;
-  --border: #e4e4e7;
+  --border: #e2e2e6;
   --bg: #ffffff;
-  --text: #0a0a0a;
+  --text: #0c0c0c;
   --surface: #ffffff;
   --surface-soft: #fafafa;
-  --app-bg: #f4f4f5;
-  /* Crimson + black (Trek-inspired, professional) */
-  --brand: #e31837;
-  --brand-rgb: 227, 24, 55;
-  --brand-2: #111111;
-  --brand-light: rgba(var(--brand-rgb), 0.09);
-  --brand-border: rgba(var(--brand-rgb), 0.22);
-  --brand-shadow: rgba(var(--brand-rgb), 0.32);
-  --accent: #3f3f46;
+  --app-bg: #f6f6f7;
+  /* Reload-inspired: bordô + preto, neutros limpos (banners auth/home) */
+  --brand: #9e2135;
+  --brand-rgb: 158, 33, 53;
+  --brand-2: #0d0d0d;
+  --brand-light: rgba(var(--brand-rgb), 0.075);
+  --brand-border: rgba(var(--brand-rgb), 0.2);
+  --brand-shadow: rgba(var(--brand-rgb), 0.26);
+  --accent: #57534e;
 }
 
 html,
@@ -26,8 +26,8 @@ body {
   padding: 0;
   margin: 0;
   background:
-    radial-gradient(1100px 300px at 50% -150px, rgba(var(--brand-rgb), 0.12) 0%, rgba(var(--brand-rgb), 0.03) 40%, transparent 68%),
-    linear-gradient(180deg, #fafafa 0%, var(--app-bg) 28%, var(--app-bg) 100%);
+    radial-gradient(1000px 280px at 50% -140px, rgba(var(--brand-rgb), 0.07) 0%, rgba(var(--brand-rgb), 0.02) 38%, transparent 65%),
+    linear-gradient(180deg, #fafafa 0%, var(--app-bg) 32%, var(--app-bg) 100%);
   color: var(--text);
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
@@ -48,7 +48,7 @@ a {
   animation: ticker-scroll 20s linear infinite;
   font-size: 13px;
   font-weight: 700;
-  color: rgba(17, 24, 39, 0.78);
+  color: rgba(12, 12, 12, 0.72);
 }
 
 @keyframes ticker-scroll {

@@ -16,7 +16,7 @@ function AuthHeaderCard() {
     >
       <img
         src="/auth-banner.png"
-        alt="Trek"
+        alt="Reload"
         style={{
           display: "block",
           width: "100%",

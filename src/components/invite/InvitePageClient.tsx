@@ -113,7 +113,7 @@ export function InvitePageClient({
             >
               <img
                 src="/logo-equipe.png"
-                alt="Trek"
+                alt="Reload"
                 style={{
                   width: "100%",
                   height: "100%",

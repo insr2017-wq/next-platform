@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getPlatformSettings } from "@/lib/platform-settings";
+import { resolveInviterChainForProductPurchase } from "@/lib/referral-commission-chain";
 
 export async function POST(
   _request: Request,
@@ -63,24 +64,14 @@ export async function POST(
       });
 
       // === Comissões de indicação: somente após compra confirmada ===
-      // Nível 1: quem indicou o comprador
-      const l1 = await tx.referral.findFirst({
-        where: { invitedUserId: buyerId },
-        select: { inviterId: true },
-      });
-      if (!l1) return;
-
-      // Busca encadeamento até nível 3 (se existir)
-      const l2 = await tx.referral.findFirst({
-        where: { invitedUserId: l1.inviterId },
-        select: { inviterId: true },
-      });
-      const l3 = l2
-        ? await tx.referral.findFirst({
-            where: { invitedUserId: l2.inviterId },
-            select: { inviterId: true },
-          })
-        : null;
+      const chain = await resolveInviterChainForProductPurchase(tx, buyerId);
+      if (chain.usedReferredByFallback) {
+        console.warn(
+          "[purchase] comissão L1 resolvida via User.referredBy (sem linha em Referral)",
+          { buyerId }
+        );
+      }
+      if (!chain.l1) return;
 
       const existing = await tx.referralCommission.findMany({
         where: { userProductId: userProduct.id },
@@ -89,9 +80,11 @@ export async function POST(
       const existingLevels = new Set(existing.map((e) => e.level));
 
       const inviterIdsByLevel: Array<{ level: 1 | 2 | 3; userId: string }> = [];
-      if (!existingLevels.has(1)) inviterIdsByLevel.push({ level: 1, userId: l1.inviterId });
-      if (l2 && !existingLevels.has(2)) inviterIdsByLevel.push({ level: 2, userId: l2.inviterId });
-      if (l3 && !existingLevels.has(3)) inviterIdsByLevel.push({ level: 3, userId: l3.inviterId });
+      if (!existingLevels.has(1)) inviterIdsByLevel.push({ level: 1, userId: chain.l1 });
+      if (chain.l2 && !existingLevels.has(2)) inviterIdsByLevel.push({ level: 2, userId: chain.l2 });
+      if (chain.l2 && chain.l3 && !existingLevels.has(3)) {
+        inviterIdsByLevel.push({ level: 3, userId: chain.l3 });
+      }
 
       if (inviterIdsByLevel.length === 0) return;
 
@@ -111,6 +104,7 @@ export async function POST(
       };
 
       for (const entry of inviterIdsByLevel) {
+        if (entry.userId === buyerId) continue;
         if (!inviterIdSet.has(entry.userId)) continue;
         const perc = levelPerc[entry.level];
         const raw = (base * perc) / 100;
