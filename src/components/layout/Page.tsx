@@ -7,6 +7,7 @@ type TopBanner = {
   alt?: string;
   height?: number;
   fullWidth?: boolean;
+  position?: string;
 };
 
 type PageProps = {
@@ -22,6 +23,7 @@ export function Page({ title, backHref, children, headerTone, topBanner, hideHea
   const hasBanner = Boolean(topBanner?.src);
   const bannerHeight = topBanner?.height ?? 180;
   const bannerFullWidth = topBanner?.fullWidth === true;
+  const bannerPosition = topBanner?.position ?? "center";
 
   return (
     <div style={{ position: "relative" }}>
@@ -54,7 +56,7 @@ export function Page({ title, backHref, children, headerTone, topBanner, hideHea
               inset: 0,
               backgroundImage: `url(${topBanner!.src})`,
               backgroundSize: "cover",
-              backgroundPosition: "center",
+              backgroundPosition: bannerPosition,
               backgroundRepeat: "no-repeat",
               borderRadius: bannerFullWidth ? 0 : 20,
             }}

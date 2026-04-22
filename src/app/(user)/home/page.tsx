@@ -26,9 +26,10 @@ export default async function HomePage() {
       hideHeader
       topBanner={{
         src: "/home-banner.png",
-        alt: "Reload — Energia e performance: banner promocional com produtos e efeitos de energia",
-        height: 220,
+        alt: "BeMine - Mineração feita para você",
+        height: 236,
         fullWidth: true,
+        position: "center top",
       }}
     >
       <WelcomeModalClient

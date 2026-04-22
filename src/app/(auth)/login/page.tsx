@@ -16,7 +16,7 @@ function AuthHeaderCard() {
     >
       <img
         src="/auth-banner.png"
-        alt="Reload"
+        alt="BeMine"
         style={{
           display: "block",
           width: "100%",
