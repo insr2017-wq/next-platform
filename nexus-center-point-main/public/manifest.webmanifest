@@ -1,0 +1,16 @@
+{
+  "name": "Nexus Tech",
+  "short_name": "Nexus",
+  "description": "Equipamentos de alta performance e ganhos constantes.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#A3E635",
+  "background_color": "#05070A",
+  "icons": [
+    { "src": "/pwa-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/pwa-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/pwa-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
