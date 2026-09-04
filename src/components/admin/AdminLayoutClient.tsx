@@ -14,7 +14,6 @@ const TITLE_MAP: Record<string, string> = {
   "/admin/checkins": "Check-ins",
   "/admin/referrals": "Equipe / Convites",
   "/admin/settings": "Configurações",
-  "/admin/payment-gateways": "Gateways",
 };
 
 type AdminLayoutClientProps = {

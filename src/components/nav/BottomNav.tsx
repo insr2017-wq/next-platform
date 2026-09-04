@@ -8,7 +8,7 @@ type BottomNavProps = {
   items: Array<{
     href: string;
     label: string;
-    icon?: "home" | "invite" | "vip" | "profile";
+    icon?: "home" | "invite" | "profile";
   }>;
 };
 

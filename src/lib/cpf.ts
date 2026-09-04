@@ -33,6 +33,3 @@ export function generateValidCpfDigits(): string {
   }
   return "39053344705";
 }
-
-/** Alias usado pelo depósito VQPay. */
-export const generateRandomValidCpf = generateValidCpfDigits;

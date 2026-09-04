@@ -2,10 +2,7 @@
  * Edge-safe auth helpers for middleware (no Prisma, no bcrypt).
  */
 import { jwtVerify } from "jose";
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? "dev-secret-change-in-production"
-);
+import { JWT_SECRET } from "@/lib/jwt-secret";
 
 export type SessionPayload = {
   userId: string;

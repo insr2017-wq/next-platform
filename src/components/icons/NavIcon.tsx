@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-type IconName = "home" | "invite" | "vip" | "profile";
+type IconName = "home" | "invite" | "profile";
 
 type NavIconProps = {
   name: IconName;
@@ -40,25 +40,6 @@ export function NavIcon({ name, active, size = 22, style }: NavIconProps) {
             stroke={color}
             strokeWidth="2"
             strokeLinejoin="round"
-          />
-        </svg>
-      );
-    case "vip":
-      return (
-        <svg viewBox="0 0 24 24" style={{ ...common, ...style }} aria-hidden="true">
-          <path
-            d="M6 4h12l-1 7a5 5 0 0 1-5 4H12a5 5 0 0 1-5-4L6 4Z"
-            fill="none"
-            stroke={color}
-            strokeWidth="2"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M9 20h6M10 15l-1 5m6-5 1 5"
-            fill="none"
-            stroke={color}
-            strokeWidth="2"
-            strokeLinecap="round"
           />
         </svg>
       );

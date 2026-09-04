@@ -19,22 +19,23 @@ const ADMIN_PHONE = "89981478520";
  * Garante o usuário admin (telefone acima) e rebaixa qualquer outro admin para user.
  * Login em /login — admin vai para /admin/dashboard.
  *
- * Senha: ADMIN_SEED_PASSWORD no .env ou padrão em código.
+ * Senha de conta nova: ADMIN_SEED_PASSWORD no .env (obrigatório).
+ * Contas já existentes não têm a senha alterada.
  */
 const SUPREMO_NAME = "Administrador supremo";
 
 async function main() {
   const adminPhone = ADMIN_PHONE.replace(/\D/g, "").trim();
-  const adminPassword = (process.env.ADMIN_SEED_PASSWORD ?? "230723").trim();
+  const adminPassword = process.env.ADMIN_SEED_PASSWORD?.trim() ?? "";
 
   if (adminPhone.length < 10) {
     throw new Error("Telefone admin inválido.");
   }
   if (adminPassword.length < 6) {
-    throw new Error("ADMIN_SEED_PASSWORD deve ter ao menos 6 caracteres.");
+    throw new Error(
+      "ADMIN_SEED_PASSWORD não definido. Configure no .env (mínimo 6 caracteres) antes de rodar o seed.",
+    );
   }
-
-  const passwordHash = await bcrypt.hash(adminPassword, 12);
 
   const existing = await prisma.user.findUnique({ where: { phone: adminPhone } });
 
@@ -43,12 +44,12 @@ async function main() {
       where: { id: existing.id },
       data: {
         role: "admin",
-        passwordHash,
         fullName: existing.fullName?.trim() ? existing.fullName : SUPREMO_NAME,
       },
     });
-    console.log("Usuário existente promovido/atualizado como admin.");
+    console.log("Usuário existente promovido/atualizado como admin (senha não alterada).");
   } else {
+    const passwordHash = await bcrypt.hash(adminPassword, 12);
     const inviteCode = await uniqueInviteCode();
     await prisma.user.create({
       data: {
@@ -60,7 +61,7 @@ async function main() {
         inviteCode,
       },
     });
-    console.log("Conta admin criada.");
+    console.log("Conta admin criada. Senha = valor de ADMIN_SEED_PASSWORD no .env.");
   }
 
   const demoted = await prisma.user.updateMany({
@@ -72,10 +73,7 @@ async function main() {
   }
 
   console.log("");
-  console.log("Admin — entre em /login com:");
-  console.log("  Telefone:", adminPhone);
-  console.log("  Senha:   ", adminPassword);
-  console.log("  (altere ADMIN_SEED_PASSWORD em produção)");
+  console.log("Admin — entre em /login com o telefone:", adminPhone);
 }
 
 main()

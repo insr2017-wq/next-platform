@@ -1,10 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? "dev-secret-change-in-production"
-);
+import { JWT_SECRET } from "@/lib/jwt-secret";
 export const SESSION_COOKIE_NAME = "session";
 const COOKIE_NAME = SESSION_COOKIE_NAME;
 /** Cookie de sessão: sem maxAge → removido ao fechar o navegador (não permanece logado). */
