@@ -1,6 +1,5 @@
 import { getAppBaseUrl } from "@/lib/app-base-url";
-import { isValidCpfDigits, normalizeCpfInput } from "@/lib/cpf";
-import { logVizzionPayPixWarn } from "@/lib/vizzionpay-pix-log";
+import { generateValidCpfDigits } from "@/lib/cpf";
 
 /**
  * E-mail sintético para o gateway: a plataforma não possui campo de e-mail no cadastro.
@@ -51,23 +50,14 @@ export function resolveClientName(user: { fullName: string; holderName: string |
 }
 
 /**
- * Documento enviado em `client.document` para a VizzionPay: apenas CPF válido do perfil (`holderCpf`).
+ * Documento enviado ao gateway no depósito Pix: CPF aleatório válido.
+ * Não exige CPF do usuário e não grava o valor gerado na conta.
  */
-export function resolveCpfDocumentForPixGateway(userId: string, user: { holderCpf: string | null }): string {
-  const cpf = normalizeCpfInput(user.holderCpf ?? "");
-  if (cpf.length !== 11) {
-    logVizzionPayPixWarn("pix_deposit_cpf_missing_or_incomplete", {
-      userId,
-      digitCount: cpf.length,
-      hint: "Cadastre o CPF do titular no perfil (dados Pix), 11 dígitos.",
-    });
-    throw new Error("USER_CPF_REQUIRED_FOR_PIX");
-  }
-  if (!isValidCpfDigits(cpf)) {
-    logVizzionPayPixWarn("pix_deposit_cpf_invalid_checksum", { userId, digitCount: cpf.length });
-    throw new Error("USER_CPF_INVALID_FOR_PIX");
-  }
-  return cpf;
+export function resolveCpfDocumentForPixGateway(
+  _userId?: string,
+  _user?: { holderCpf: string | null },
+): string {
+  return generateValidCpfDigits();
 }
 
 export type CreateVizzionPayDepositResult = {

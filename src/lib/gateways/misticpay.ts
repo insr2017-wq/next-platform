@@ -51,6 +51,31 @@ function pickString(obj: Record<string, unknown> | null | undefined, keys: strin
   return null;
 }
 
+function looksLikePixEmv(value: string): boolean {
+  const t = value.trim();
+  return t.startsWith("000201") || /BR\.GOV\.BCB\.PIX/i.test(t);
+}
+
+/** Base64/URL de imagem; ignora copia-e-cola EMV se o gateway reutilizar o campo qrCode. */
+function pickQrImagePayload(data: Record<string, unknown>): string | null {
+  const preferred = pickString(data, [
+    "qrCodeBase64",
+    "qr_code_base64",
+    "qrCodeImage",
+    "qr_code_image",
+  ]);
+  if (preferred && !looksLikePixEmv(preferred)) return preferred;
+
+  const maybe = pickString(data, ["qrCode", "qr_code"]);
+  if (!maybe || looksLikePixEmv(maybe)) return null;
+  if (maybe.startsWith("data:image") || maybe.startsWith("http://") || maybe.startsWith("https://")) {
+    return maybe;
+  }
+  const compact = maybe.replace(/\s/g, "");
+  if (/^[A-Za-z0-9+/]+=*$/.test(compact) && compact.length > 80) return maybe;
+  return null;
+}
+
 function pickNumber(obj: Record<string, unknown> | null | undefined, keys: string[]): number | null {
   if (!obj) return null;
   for (const k of keys) {
@@ -196,7 +221,7 @@ class MisticPayGateway implements PaymentGateway {
       gatewayTransactionId,
       status: pickString(data, ["transactionState", "status"]) ?? "PENDENTE",
       pixCode,
-      qrCodeImage: pickString(data, ["qrCodeBase64", "qr_code_base64", "qrCode", "qr_code"]),
+      qrCodeImage: pickQrImagePayload(data),
     };
   }
 

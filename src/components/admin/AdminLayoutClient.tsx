@@ -14,14 +14,14 @@ const TITLE_MAP: Record<string, string> = {
   "/admin/checkins": "Check-ins",
   "/admin/referrals": "Equipe / Convites",
   "/admin/settings": "Configurações",
+  "/admin/payment-gateways": "Gateways",
 };
 
 type AdminLayoutClientProps = {
   children: React.ReactNode;
-  notificationCount?: number;
 };
 
-export function AdminLayoutClient({ children, notificationCount = 0 }: AdminLayoutClientProps) {
+export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
   const pathname = usePathname();
   const title =
     pathname?.startsWith("/admin/users/") && pathname !== "/admin/users"
@@ -30,7 +30,7 @@ export function AdminLayoutClient({ children, notificationCount = 0 }: AdminLayo
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--app-bg)" }}>
-      <AdminHeader title={title} notificationCount={notificationCount} />
+      <AdminHeader title={title} />
       <main
         style={{
           maxWidth: "var(--container-max)",

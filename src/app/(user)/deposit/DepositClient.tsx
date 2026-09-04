@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { QrCode } from "lucide-react";
-import { isValidCpfDigits } from "@/lib/cpf";
 import { Page } from "@/components/layout/Page";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -13,10 +12,16 @@ type PixPaymentPlaceholders = {
   paymentStatus: "Pendente" | "Pago" | "Falhou";
 };
 
+function looksLikePixEmv(value: string): boolean {
+  const t = value.trim();
+  return t.startsWith("000201") || /BR\.GOV\.BCB\.PIX/i.test(t);
+}
+
 function normalizeQrImageSrc(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const t = String(raw).trim();
   if (!t) return null;
+  if (looksLikePixEmv(t)) return null;
   if (t.startsWith("data:") || t.startsWith("http://") || t.startsWith("https://")) return t;
   return `data:image/png;base64,${t}`;
 }
@@ -40,22 +45,6 @@ function formatInputAmount(value: number): string {
   const asInt = Math.abs(rounded - Math.round(rounded)) < 1e-9 ? Math.round(rounded) : null;
   if (asInt !== null) return String(asInt);
   return rounded.toFixed(2).replace(".", ",");
-}
-
-function onlyDigits(value: string) {
-  return value.replace(/\D/g, "");
-}
-
-function maskCPF(value: string) {
-  const d = onlyDigits(value).slice(0, 11);
-  const p1 = d.slice(0, 3);
-  const p2 = d.slice(3, 6);
-  const p3 = d.slice(6, 9);
-  const p4 = d.slice(9, 11);
-  if (d.length <= 3) return p1;
-  if (d.length <= 6) return `${p1}.${p2}`;
-  if (d.length <= 9) return `${p1}.${p2}.${p3}`;
-  return `${p1}.${p2}.${p3}-${p4}`;
 }
 
 function generateQuickAmounts(minDeposit: number) {
@@ -124,12 +113,16 @@ function PixDepositModal({
   const [verifying, setVerifying] = useState(false);
   const [verifyHint, setVerifyHint] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<PixPaymentPlaceholders["paymentStatus"]>("Pendente");
+  const [qrBroken, setQrBroken] = useState(false);
+  const [copyHint, setCopyHint] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setPaymentStatus(placeholders?.paymentStatus ?? "Pendente");
     setVerifyHint(null);
-  }, [open, placeholders?.paymentStatus]);
+    setQrBroken(false);
+    setCopyHint(null);
+  }, [open, placeholders?.paymentStatus, placeholders?.qrCodeImage, placeholders?.pixCode]);
 
   if (!open) return null;
 
@@ -141,15 +134,38 @@ function PixDepositModal({
 
   const copyCode = async () => {
     const code = resolvedPlaceholders.pixCode;
-    if (!code) return;
+    if (!code) {
+      setCopyHint("Código Pix indisponível. Tente gerar o pagamento novamente.");
+      return;
+    }
     try {
       await navigator.clipboard.writeText(code);
+      setCopyHint("Código Pix copiado. Cole no app do seu banco para pagar.");
+      return;
     } catch {
-      // ignore: copy may fail in some browsers
+      try {
+        const el = document.createElement("textarea");
+        el.value = code;
+        el.setAttribute("readonly", "");
+        el.style.position = "fixed";
+        el.style.left = "-9999px";
+        document.body.appendChild(el);
+        el.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(el);
+        setCopyHint(
+          ok
+            ? "Código Pix copiado. Cole no app do seu banco para pagar."
+            : "Não foi possível copiar automaticamente. Selecione o código acima e copie manualmente.",
+        );
+      } catch {
+        setCopyHint("Não foi possível copiar automaticamente. Selecione o código acima e copie manualmente.");
+      }
     }
   };
 
   const qrSrc = normalizeQrImageSrc(resolvedPlaceholders.qrCodeImage);
+  const showQrFallback = !qrSrc || qrBroken;
 
   const overlayPad =
     "max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left))";
@@ -254,38 +270,51 @@ function PixDepositModal({
             Escaneie o QR Code ou copie o código Pix para realizar o pagamento.
           </div>
 
-          <div
-            style={{
-              width: "100%",
-              maxWidth: "min(72vw, 260px)",
-              margin: "0 auto",
-              aspectRatio: "1",
-              maxHeight: "min(34dvh, 240px)",
-              borderRadius: 14,
-              border: "1px dashed var(--border)",
-              background: "rgba(22,101,52,0.03)",
-              display: "grid",
-              placeItems: "center",
-              color: "var(--text-muted)",
-              fontWeight: 900,
-              fontSize: 11,
-              textAlign: "center",
-              padding: 10,
-              overflow: "hidden",
-              boxSizing: "border-box",
-            }}
-          >
-            {qrSrc ? (
-              // eslint-disable-next-line @next/next/no-img-element
+          {showQrFallback ? (
+            <div
+              role="status"
+              style={{
+                borderRadius: 14,
+                border: "1px solid var(--brand-border)",
+                background: "var(--brand-light)",
+                color: "var(--text)",
+                fontWeight: 700,
+                fontSize: 12,
+                lineHeight: 1.45,
+                padding: 12,
+                textAlign: "left",
+              }}
+            >
+              Não foi possível carregar o QR Code. Clique no botão abaixo para copiar o código Pix (copia e cola) e
+              finalizar o pagamento.
+            </div>
+          ) : (
+            <div
+              style={{
+                width: "100%",
+                maxWidth: "min(72vw, 260px)",
+                margin: "0 auto",
+                aspectRatio: "1",
+                maxHeight: "min(34dvh, 240px)",
+                borderRadius: 14,
+                border: "1px dashed var(--border)",
+                background: "#ffffff",
+                display: "grid",
+                placeItems: "center",
+                overflow: "hidden",
+                boxSizing: "border-box",
+                padding: 8,
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={qrSrc}
                 alt="QR Code Pix"
+                onError={() => setQrBroken(true)}
                 style={{ width: "100%", height: "100%", objectFit: "contain" }}
               />
-            ) : (
-              <span>Use o código Pix abaixo para concluir o pagamento.</span>
-            )}
-          </div>
+            </div>
+          )}
 
           <div style={{ display: "grid", gap: 6 }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: "var(--text-muted)" }}>Código Pix</div>
@@ -306,17 +335,31 @@ function PixDepositModal({
             <Button
               type="button"
               fullWidth={true}
+              disabled={!resolvedPlaceholders.pixCode}
               style={{
                 borderRadius: 12,
                 padding: "10px 12px",
                 fontSize: 12,
                 fontWeight: 900,
                 boxShadow: "none",
+                opacity: resolvedPlaceholders.pixCode ? 1 : 0.6,
               }}
               onClick={() => void copyCode()}
             >
               Copiar código Pix
             </Button>
+            {copyHint ? (
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color: copyHint.startsWith("Código Pix copiado") ? "#86efac" : "var(--danger)",
+                  lineHeight: 1.35,
+                }}
+              >
+                {copyHint}
+              </div>
+            ) : null}
           </div>
 
           <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.35, fontWeight: 700 }}>
@@ -398,20 +441,14 @@ function PixDepositModal({
 export function DepositClient({
   initialBalance,
   minDeposit,
-  initialHolderCpf,
 }: {
   initialBalance: number;
   minDeposit: number;
-  initialHolderCpf: string | null;
 }) {
   const quickAmounts = useMemo(() => generateQuickAmounts(minDeposit), [minDeposit]);
 
   const [customAmount, setCustomAmount] = useState<string>("");
   const [selectedQuickAmount, setSelectedQuickAmount] = useState<number | null>(null);
-  const [cpf, setCpf] = useState(() => {
-    const d = onlyDigits(initialHolderCpf ?? "");
-    return d.length === 11 ? maskCPF(d) : "";
-  });
 
   const [error, setError] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -432,11 +469,6 @@ export function DepositClient({
   const handleCustomChange = (value: string) => {
     setCustomAmount(value);
     setSelectedQuickAmount(null);
-    setError("");
-  };
-
-  const handleCpfChange = (value: string) => {
-    setCpf(maskCPF(value));
     setError("");
   };
 
@@ -531,45 +563,6 @@ export function DepositClient({
         </Card>
 
         <Card>
-          <div style={{ padding: 16, display: "grid", gap: 10 }}>
-            <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text-muted)" }}>
-              CPF do titular
-            </div>
-            <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.4, fontWeight: 600 }}>
-              Obrigatório para gerar o Pix. Os dados serão salvos na sua conta para próximas recargas.
-            </div>
-            <label
-              style={{
-                border: "1px solid var(--border)",
-                borderRadius: 14,
-                background: "var(--surface)",
-                padding: "0 12px",
-                boxShadow: "0 4px 12px rgba(17,24,39,0.04)",
-              }}
-            >
-              <input
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                placeholder="000.000.000-00"
-                value={cpf}
-                onChange={(e) => handleCpfChange(e.target.value)}
-                style={{
-                  width: "100%",
-                  border: 0,
-                  outline: "none",
-                  padding: "13px 0",
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: "var(--text)",
-                  background: "transparent",
-                }}
-              />
-            </label>
-          </div>
-        </Card>
-
-        <Card>
           <div
             style={{
               padding: 16,
@@ -641,12 +634,6 @@ export function DepositClient({
               return;
             }
 
-            const cpfDigits = onlyDigits(cpf);
-            if (cpfDigits.length !== 11 || !isValidCpfDigits(cpfDigits)) {
-              setError("Informe um CPF válido do titular (11 dígitos) para gerar o Pix.");
-              return;
-            }
-
             setError("");
             setIsCreatingPix(true);
 
@@ -655,7 +642,7 @@ export function DepositClient({
                 const res = await fetch("/api/user/deposit/pix", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ amount: activeAmount, cpf: cpfDigits }),
+                  body: JSON.stringify({ amount: activeAmount }),
                 });
                 const data = (await res.json().catch(() => ({}))) as {
                   error?: string;

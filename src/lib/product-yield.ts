@@ -1,4 +1,4 @@
-import { roundMoney } from "@/lib/cashback";
+import { roundMoney } from "@/lib/money";
 
 export function computeProductYield(price: number, returnPercent: number, cycleDays: number) {
   const value = Math.max(0, Number(price) || 0);

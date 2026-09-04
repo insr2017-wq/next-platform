@@ -130,9 +130,7 @@ export async function createPixDeposit(
       msg === "USER_BANNED" ||
       msg === "VIZZIONPAY_NOT_CONFIGURED" ||
       msg === "VIZZIONPAY_DEPOSIT_PRODUCT_NOT_CONFIGURED" ||
-      msg === "DEPOSIT_AMOUNT_INCOMPATIBLE_WITH_PRODUCT_UNIT" ||
-      msg === "USER_CPF_REQUIRED_FOR_PIX" ||
-      msg === "USER_CPF_INVALID_FOR_PIX"
+      msg === "DEPOSIT_AMOUNT_INCOMPATIBLE_WITH_PRODUCT_UNIT"
     ) {
       await prisma.deposit
         .update({

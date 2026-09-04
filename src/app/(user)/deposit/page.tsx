@@ -13,7 +13,7 @@ export default async function DepositPage() {
   const [user, platformSettings] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.userId },
-      select: { balance: true, holderCpf: true },
+      select: { balance: true },
     }),
     getPlatformSettings(),
   ]);
@@ -25,7 +25,6 @@ export default async function DepositPage() {
     <DepositClient
       initialBalance={initialBalance}
       minDeposit={minDeposit}
-      initialHolderCpf={user?.holderCpf ?? null}
     />
   );
 }

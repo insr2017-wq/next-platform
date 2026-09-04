@@ -131,7 +131,7 @@ export async function createVqPayPixDeposit(
         gatewayProvider: "vqpay",
         gatewayTransactionId: result.paymentId,
         externalReference: identifier,
-        redirectUrl: result.redirectUrl,
+        pixCode: result.redirectUrl,
       },
     });
 

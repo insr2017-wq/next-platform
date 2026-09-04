@@ -171,7 +171,7 @@ export function InvitePageClient({
                   fontSize: 14,
                   color: "var(--text-muted)",
                   lineHeight: 1.5,
-                  background: "rgba(243,244,246,0.8)",
+                  background: "var(--surface-soft)",
                   borderRadius: 14,
                   border: "1px solid var(--border)",
                 }}
